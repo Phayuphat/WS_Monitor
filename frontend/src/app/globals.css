@@ -1,0 +1,33 @@
+
+.custom-label{
+  font-size: 20px;
+} 
+
+.select1{
+  width: 1000px;
+}
+
+.edit_table td{
+  border: 1px solid rgb(201, 201, 201);
+  /* height: 500px; */
+}
+
+.edit_table th{
+  border: 1px solid rgb(201, 201, 201);
+  text-align: center;
+}
+
+.ant-table-placeholder{
+  height: 590px;
+}
+
+/* body in edit_table */
+.ant-table-body{
+  height: 590px;
+}
+
+.ant-table-wrapper .ant-table-thead >tr>th {
+  text-align: center;
+  font-weight: bold;
+  font-size: 13px;
+}
