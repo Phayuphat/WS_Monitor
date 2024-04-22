@@ -100,7 +100,7 @@ class CommonsCRUD:
         process_id = int(process_id)
         try:
             stmt = f"""
-            SELECT display FROM ws_display 
+            SELECT display FROM wi_display 
             WHERE process_id =:process_id;
             """
             rs = await db.execute(text(stmt),{"process_id": process_id})

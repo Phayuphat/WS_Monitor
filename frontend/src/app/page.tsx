@@ -76,7 +76,7 @@ const App: React.FC = () => {
   const [maxId, set_max_id] = useState<any>([]);
   const [data, set_data] = useState<any>([]);
   const [add_row_click, set_add_row_click] = useState(false);
-  const [show_upload, set_show_upload] = useState(false);
+  
   const [editingKey, set_editing_key] = useState("");
   const [uploadList, set_uploadlist] = useState<UploadFile[]>([]);
   const [default_image, set_defult_image] = useState<any>([]);
@@ -141,7 +141,7 @@ const App: React.FC = () => {
 
   const cancel = () => {
     set_editing_key("");
-    set_show_upload(false);
+    
   };
 
   //save all data in 1 row to database
@@ -181,7 +181,7 @@ const App: React.FC = () => {
       console.log("Put Data : ", upsertItem);
     }
   };
-
+// TODO recheck  this function (saveDB to setNewData)
   //func. save row
   const save = async (key: React.Key) => {
     try {
@@ -197,8 +197,8 @@ const App: React.FC = () => {
 
         if (!part_number_check) {
           message.error("Please change the part number, it must be unique!");
-        } else {
-        }
+          return;
+        } 
 
         const { key: omitKey, ...savedItem } = updatedItem;
         newData.splice(index, 1, updatedItem);
@@ -234,6 +234,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (form.getFieldValue("LineName") !== undefined) {
       showData();
+      
     } else {
     }
     console.log("image change");
@@ -268,17 +269,6 @@ const App: React.FC = () => {
     } catch (err) {}
   };
 
-  // const showMonitor = (process_id:number) =>{
-  //   try{
-  //     const appii = await ax
-  //     if(response = 200){
-  //       return Response.data
-  //     }else{
-  //       return "No display data"
-  //     }
-  //   }
-  // }
-
   useEffect(() => {
     if (form.getFieldValue("LineName") === undefined) {
       setDisabled(true);
@@ -300,12 +290,14 @@ const App: React.FC = () => {
           process_id: value,
         },
       });
+      
+      
       if (responseDisplay.status === 200){
+        // set_Monitor("No Display Show")
         set_Monitor(responseDisplay.data.display_name.at(0).display)
       } else {
-        set_Monitor("No Diaplay Show")
-      }
       
+      }
       
       const responsePartNumber = await axiosInstance.get(
         "/commons/get_part_number",
@@ -387,6 +379,8 @@ const App: React.FC = () => {
 
   //get data in table ex.image path, plc data, part no., uddate time etc.
   const showData = async () => {
+    set_editing_key("");
+
     const line_id = form.getFieldValue("LineName") || "0";
     const process_id = form.getFieldValue("Process") || "0";
 
@@ -416,6 +410,7 @@ const App: React.FC = () => {
     if (response_wi.status === 200) {
       const maxId = Math.max(...response_wi.data.map((item: any) => item.id));
       set_max_id(maxId);
+      
       // console.log("max :", maxId);
     }
   };
@@ -429,6 +424,7 @@ const App: React.FC = () => {
     set_data(updatedData);
   };
 
+  //************** problem >>>> when change linenaem and process = no add data(row) */
   const onAddButtonClick = () => {
     if (!editingKey) {
       const newId = maxId + 1;
@@ -446,7 +442,6 @@ const App: React.FC = () => {
   };
 
   const onSaveButtonClick = async (record: any) => {
-    set_show_upload(false);
     save(record.key);
   };
 
@@ -593,7 +588,7 @@ const App: React.FC = () => {
                     disabled={editingKey !== "" && editingKey !== record.key}
                     onClick={() => {
                       edit(record);
-                      set_show_upload(!show_upload);
+                      
                     }}
                     style={{
                       boxShadow: "3px 3px 10px 0px",
@@ -730,7 +725,7 @@ const App: React.FC = () => {
                 showSearch
                 allowClear
                 placeholder="Select a Process"
-                style={{ width: 250 }}
+                style={{ width: 350 }}
                 onSelect={PartNumberChange}
                 disabled={distinct_process < 1}
               >
@@ -754,11 +749,19 @@ const App: React.FC = () => {
                   Monitor
                 </span>
               }>
-           
+
               {/*Dispaly show*/}
+              <div style={{width:"200px"}}>
+
+              
               <span className = "monitor_name" style={{ fontSize: 20, fontWeight: "bold", color: "blue" }}>
                 {monitor}
-              </span>
+              </span> 
+              {/* :
+              <span className = "monitor_name" style={{ fontSize: 20, fontWeight: "bold", color: "blue" }}>
+                No Display Show
+              </span>  */}
+              </div>
             </FormItem>
 
             <FormItem
@@ -798,7 +801,7 @@ const App: React.FC = () => {
             >
               <Search
                 placeholder="Filter a part number"
-                style={{ width: 240, marginRight: "2rem" }}
+                style={{ width: 300, marginRight: "2rem" }}
                 onSearch={(value) => set_search_text(value)}
                 allowClear
               />

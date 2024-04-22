@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3001",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -12,7 +12,7 @@
     "@types/node": "20.11.6",
     "@types/react": "18.2.48",
     "@types/react-dom": "18.2.18",
-    "antd": "^5.16.1",
+    "antd": "^5.16.2",
     "autoprefixer": "10.4.17",
     "axios": "^1.6.7",
     "date-fns-tz": "^2.0.0",
