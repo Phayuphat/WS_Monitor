@@ -25,8 +25,6 @@ class PostData(BaseModel):
 
 class DataWi(BaseModel):
     id: int
-    # line_id:int
-    # process_id:int
     part_no:str
     plc_data:str
     update_at:str
@@ -67,8 +65,6 @@ class display(BaseModel):
 class display_data(BaseModel):
     display_name:List[display]
 
-    
-#############################
     
 class wi_table(BaseModel):
     id: int

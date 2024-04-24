@@ -169,6 +169,9 @@ class CommonsManager:
         await self.crud.post_edit_data(db=db, item=item)
         return True
 
+
+
+
     async def delete_row(
         self,
         item:delete_a_row,

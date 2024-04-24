@@ -127,7 +127,7 @@ class CommonsCRUD:
         try:
             stmt = f"""
             INSERT INTO wi_process (line_id, process_id, part_no, plc_data, image_path, update_at ) 
-            VALUES (:line_id, :process_id, :part_no, :plc_data, cast(:image_path AS jsonb),:update_at )
+            VALUES (:line_id, :process_id, :part_no, :plc_data, cast(:image_path AS jsonb), :update_at )
             ON CONFLICT (line_id, process_id, part_no)  
             DO UPDATE SET
             line_id = EXCLUDED.line_id,

@@ -1,5 +1,4 @@
 "use client";
-//******************************* new version *********************/
 import React, { useState, useEffect } from "react";
 import {
   Button,
@@ -25,11 +24,11 @@ import {
   DeleteOutlined,
   CloseOutlined,
   QuestionCircleOutlined,
+  PlusCircleOutlined,
 } from "@ant-design/icons";
 import type { UploadProps, UploadFile } from "antd";
 import environment from "@/app/utils/environment";
 import axiosInstance from "@/app/utils/axios";
-import Item from "antd/es/list/Item";
 
 const { Search } = Input;
 const EditableCell: React.FC<EditableCellProps> = ({
@@ -42,7 +41,24 @@ const EditableCell: React.FC<EditableCellProps> = ({
   children,
   ...restProps
 }) => {
-  const inputNode = inputType === "number" ? <InputNumber /> : <Input />;
+  const inputNode =
+    inputType === "number" ? (
+      <InputNumber value={record?.[dataIndex] || 100} />
+    ) : (
+      <Input value={record?.[dataIndex] || 100} />
+    );
+  console.log(
+    "prop",
+    "\ndataIndex: ",
+    dataIndex,
+    "\nrecord: ",
+    record,
+    "\nindex: ",
+    index
+  );
+  console.log("record dataIndex", record?.[dataIndex as string] || null);
+  console.log("record dataIndex2", record?.["plc_data"] === "" ? "yes" : "no");
+
   return (
     //input part number ,plac data in table
     <td {...restProps}>
@@ -56,6 +72,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
               message: `Please Input ${title}!`,
             },
           ]}
+          initialValue={record?.[dataIndex || ""] || ""}
         >
           {inputNode}
         </Form.Item>
@@ -67,16 +84,14 @@ const EditableCell: React.FC<EditableCellProps> = ({
 };
 
 const App: React.FC = () => {
-  //**********************set state***************************
   const [form] = Form.useForm();
+
+  const [inputValue, setInputValue] = useState<string>("");
   const [linename, set_linename] = useState<any>([]);
   const [Process, set_process] = useState<any>([]);
-  const [partnumber, set_partnumber] = useState<any>([]);
-  const [display, set_display] = useState<any>([]);
   const [maxId, set_max_id] = useState<any>([]);
-  const [data, set_data] = useState<any>([]);
+  const [data, set_data] = useState<Item[]>([]);
   const [add_row_click, set_add_row_click] = useState(false);
-  
   const [editingKey, set_editing_key] = useState("");
   const [uploadList, set_uploadlist] = useState<UploadFile[]>([]);
   const [default_image, set_defult_image] = useState<any>([]);
@@ -122,7 +137,7 @@ const App: React.FC = () => {
   } ${currentDate.getFullYear()} ${String(currentDate.getHours()).padStart(
     2,
     "0"
-  )} : ${String(currentDate.getMinutes()).padStart(2, "0")} : ${String(
+  )}: ${String(currentDate.getMinutes()).padStart(2, "0")}: ${String(
     currentDate.getSeconds()
   ).padStart(2, "0")}`;
 
@@ -139,17 +154,21 @@ const App: React.FC = () => {
     set_editing_key(record.key);
   };
 
+  const handleAddMonitor = (inputValue: any) => {
+    setInputValue("");
+    console.log("monitor_name:", inputValue);
+  };
+
   const cancel = () => {
     set_editing_key("");
-    
   };
 
   //save all data in 1 row to database
   const savetoDb = async (savedItem: any, filesPath: any) => {
     savedItem.image_path = filesPath;
+
     set_defult_image(savedItem.image_path);
     console.log("image_path :", savedItem);
-
     const line_id = form.getFieldValue("LineName");
     const process_id = form.getFieldValue("Process");
     const upsertItem = {
@@ -175,30 +194,33 @@ const App: React.FC = () => {
     if (add_row_click) {
       post_edit_data(upsertItem);
       set_add_row_click(false); // Reset the flag after processing
-      console.log("Post Data: ", upsertItem);
+      set_uploadlist([]);
     } else {
       update_row(editItem);
       console.log("Put Data : ", upsertItem);
     }
   };
-// TODO recheck  this function (saveDB to setNewData)
+  // TODO recheck  this function (saveDB to setNewData)
   //func. save row
   const save = async (key: React.Key) => {
     try {
       const row = await form.validateFields();
-      const newData = [...data];
+
+      const newData = [...new Set(data)];
+
       const index = newData.findIndex((item) => key === item.key);
+
       if (index > -1) {
         const item = newData[index];
         const updatedItem = { ...item, ...row };
+
         const part_number_check = newData.every(
           (item) => item.key === key || item.part_no !== updatedItem.part_no
         );
-
         if (!part_number_check) {
           message.error("Please change the part number, it must be unique!");
           return;
-        } 
+        }
 
         const { key: omitKey, ...savedItem } = updatedItem;
         newData.splice(index, 1, updatedItem);
@@ -213,12 +235,17 @@ const App: React.FC = () => {
             uploadList.forEach((file) => {
               formData.append("file_uploads", file.originFileObj as File);
             });
+            console.log("fromdata", formData);
+
             const response = await axiosInstance.post(
               "/commons/upload",
               formData
             );
-            if (response.status === 200) {
+            console.log("99999", response.data);
+
+            if (response.status === 200 || response.data.length < 1) {
               savetoDb(savedItem, response.data);
+            } else {
             }
           } catch (err) {
             console.error(err);
@@ -234,8 +261,6 @@ const App: React.FC = () => {
   useEffect(() => {
     if (form.getFieldValue("LineName") !== undefined) {
       showData();
-      
-    } else {
     }
     console.log("image change");
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -262,7 +287,9 @@ const App: React.FC = () => {
   const LineNameChange = async (value: string) => {
     try {
       // const line_name = form.getFieldValue("LineName");
-      const response_process = await axiosInstance.get(`/commons/get_process?line_id=${value}` );
+      const response_process = await axiosInstance.get(
+        `/commons/get_process?line_id=${value}`
+      );
       if (response_process.status === 200) {
         set_process(response_process.data.process_name);
       }
@@ -272,7 +299,6 @@ const App: React.FC = () => {
   useEffect(() => {
     if (form.getFieldValue("LineName") === undefined) {
       setDisabled(true);
-
       form.resetFields(["Process"]);
     } else {
       form.resetFields(["Process"]);
@@ -281,7 +307,7 @@ const App: React.FC = () => {
   }, [form.getFieldValue("LineName")]);
 
   //**********************API response (get_part_number)**************************
-  const PartNumberChange = async (value: number) => {
+  const DisplayChange = async (value: number) => {
     try {
       const line_id = form.getFieldValue("LineName");
       //const process_id = form.getFieldValue("Process");
@@ -290,36 +316,26 @@ const App: React.FC = () => {
           process_id: value,
         },
       });
-      
-      
-      if (responseDisplay.status === 200){
-        // set_Monitor("No Display Show")
-        set_Monitor(responseDisplay.data.display_name.at(0).display)
-      } else {
-      
+      if (responseDisplay.status === 200) {
+        set_Monitor(responseDisplay.data.display_name.at(0).display);
       }
-      
-      const responsePartNumber = await axiosInstance.get(
-        "/commons/get_part_number",
-        {
-          params: {
-            line_id: line_id,
-            process_id: value,
-          },
-        }
-      );
-
-      if (responsePartNumber.status === 200) {
-        set_partnumber(responsePartNumber.data.part_number_name);
-      } 
+      // const responsePartNumber = await axiosInstance.get(
+      //   "/commons/get_part_number",
+      //   {
+      //     params: {
+      //       line_id: line_id,
+      //       process_id: value,
+      //     },
+      //   }
+      // );
     } catch (err) {
       console.error(err);
     }
   };
 
-  useEffect (() => {
-    console.log("monitor", monitor)
-  },[monitor]);
+  useEffect(() => {
+    console.log("monitor", monitor);
+  }, [monitor]);
 
   //*************** API post (post_edit_data) ********** condition for post use with add row (true) ***********
   const post_edit_data = async (upsertItem: EditData) => {
@@ -410,7 +426,7 @@ const App: React.FC = () => {
     if (response_wi.status === 200) {
       const maxId = Math.max(...response_wi.data.map((item: any) => item.id));
       set_max_id(maxId);
-      
+
       // console.log("max :", maxId);
     }
   };
@@ -424,7 +440,6 @@ const App: React.FC = () => {
     set_data(updatedData);
   };
 
-  //************** problem >>>> when change linenaem and process = no add data(row) */
   const onAddButtonClick = () => {
     if (!editingKey) {
       const newId = maxId + 1;
@@ -436,14 +451,14 @@ const App: React.FC = () => {
         image_path: [],
         update_at: time_thai,
       };
+
       set_data([...data, newData]);
       set_editing_key(newData.key);
     }
   };
-
-  const onSaveButtonClick = async (record: any) => {
-    save(record.key);
-  };
+  useEffect(() => {
+    console.log("testaaa", data);
+  }, [data]);
 
   const columns = [
     {
@@ -509,7 +524,7 @@ const App: React.FC = () => {
               </div>
             ))}
           </Popover>
-          {/* editKey = key ของ row นั้นๆ ให้แสดง upload */}
+
           {editingKey === record.key && (
             <>
               <Tooltip title="Upload Image">
@@ -541,6 +556,9 @@ const App: React.FC = () => {
       width: 200,
       render: (_: any, record: Item) => {
         const editable = isEditing(record);
+
+        console.log("test", record);
+
         return (
           <span
             style={{ display: "flex", gap: "10px", justifyContent: "center" }}
@@ -550,13 +568,15 @@ const App: React.FC = () => {
                 <Tooltip title="Save">
                   <Button
                     type="primary"
-                    onClick={() => onSaveButtonClick(record)}
+                    onClick={() => save(record.key)}
+                    //TODO: when click edit but save button is disabled (uploadList > 1)
+                    //TODO: when no plc_data and part_no in the form, show save button as disabled
+                    disabled={uploadList.length < 1 ? true : false}
                     style={{
                       boxShadow: "3px 3px 10px ",
                       width: "50px",
                       marginRight: "10px",
                     }}
-                    className="fa fa-save"
                   >
                     <SaveOutlined
                       style={{ fontSize: "20px", textAlign: "center" }}
@@ -588,7 +608,6 @@ const App: React.FC = () => {
                     disabled={editingKey !== "" && editingKey !== record.key}
                     onClick={() => {
                       edit(record);
-                      
                     }}
                     style={{
                       boxShadow: "3px 3px 10px 0px",
@@ -726,7 +745,7 @@ const App: React.FC = () => {
                 allowClear
                 placeholder="Select a Process"
                 style={{ width: 350 }}
-                onSelect={PartNumberChange}
+                onSelect={DisplayChange}
                 disabled={distinct_process < 1}
               >
                 {distinct_process.map((item: any) => (
@@ -743,24 +762,39 @@ const App: React.FC = () => {
 
             <FormItem
               name="monitor_id"
-              style={{}}
               label={
-                <span className="custom-label" style={{ fontSize: 20 }}>
-                  Monitor
-                </span>
-              }>
-
+                <div>
+                  <span className="custom-label">Monitor</span>
+                  {/* TODO: make function post_monitor(insert,update) */}
+                  <Popconfirm
+                    title={
+                      <Input
+                        value={inputValue}
+                        placeholder="Add Monitor"
+                        onChange={(record) =>
+                          setInputValue(record.target.value)
+                        }
+                      />
+                    }
+                    onConfirm={() => handleAddMonitor(inputValue)}
+                    okText="Save"
+                    cancelText="Cancle"
+                  >
+                    <a style={{ fontSize: "20px", paddingLeft: 5 }}>
+                      <PlusCircleOutlined />
+                    </a>
+                  </Popconfirm>
+                </div>
+              }
+            >
               {/*Dispaly show*/}
-              <div style={{width:"200px"}}>
-
-              
-              <span className = "monitor_name" style={{ fontSize: 20, fontWeight: "bold", color: "blue" }}>
-                {monitor}
-              </span> 
-              {/* :
-              <span className = "monitor_name" style={{ fontSize: 20, fontWeight: "bold", color: "blue" }}>
-                No Display Show
-              </span>  */}
+              <div style={{ width: "200px" }}>
+                <span
+                  className="monitor_name"
+                  style={{ fontSize: 20, fontWeight: "bold", color: "blue" }}
+                >
+                  {monitor}
+                </span>
               </div>
             </FormItem>
 

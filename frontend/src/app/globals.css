@@ -31,3 +31,7 @@
   font-weight: bold;
   font-size: 13px;
 }
+
+.ant-popconfirm-message-icon{
+  display: none;
+}

@@ -88,7 +88,6 @@ def commons_routers(db: AsyncGenerator) -> APIRouter:
                 status_code=400, detail=f"Error during get data : {e}"
             )
 
-    #********************** ติดไว้ก่อนแปปนึง *******************
     @router.get(
     "/get_display",
     response_model=display_data,
@@ -150,6 +149,8 @@ def commons_routers(db: AsyncGenerator) -> APIRouter:
             raise HTTPException(
                 status_code=400, detail=f"Error during update : {e}"
             )
+        
+
     
     @router.put(
         "/put_edit_wi",
