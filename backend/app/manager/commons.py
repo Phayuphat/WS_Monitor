@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud import CommonsCRUD
 from app.schemas.commons import (
-DataInitals,DataWi,LineName, process_data,part_no,wi_table,delete_a_row,display
+DataInitals,DataWi,LineName, process_data,part_no,wi_table,delete_a_row,display, PostMonitor
 )
 import json
 from typing import Optional, List, Dict, Any, Union
@@ -169,7 +169,14 @@ class CommonsManager:
         await self.crud.post_edit_data(db=db, item=item)
         return True
 
-
+    async def post_monitor(
+        self,
+        item: PostMonitor,
+        db: AsyncSession = None,
+    ):
+        print("monitor_manager",item)
+        await self.crud.post_edit_data(db=db, item=item)
+        return True
 
 
     async def delete_row(

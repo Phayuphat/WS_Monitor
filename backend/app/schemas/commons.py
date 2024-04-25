@@ -15,6 +15,9 @@ class DataInitalsResponse(BaseModel):
     data:List[DataInitals]
 
 ################################################
+class PostMonitor(BaseModel):
+    monitor_name: str
+
 class PostData(BaseModel):
     line_id:int
     process_id:int

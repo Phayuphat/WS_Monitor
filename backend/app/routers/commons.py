@@ -6,7 +6,7 @@ import json
 import string
 import os
 from app.schemas.commons import (
-    DataInitalsResponse,DataInitals,DataWi,LineName,process_dataResponse,part_number_data,wi_table,delete_a_row,PostData,display_data
+    DataInitalsResponse,DataInitals,DataWi,LineName,process_dataResponse,part_number_data,wi_table,delete_a_row,PostData,display_data,PostMonitor
 )
 from app.manager import CommonsManager
 from app.functions import api_key_auth
@@ -144,6 +144,20 @@ def commons_routers(db: AsyncGenerator) -> APIRouter:
         try:
             item.image_path = json.dumps(item.image_path)
             post_edit_data = await manager.post_edit_data(item=item,db=db)
+            return {"success": True}
+        except Exception as e:
+            raise HTTPException(
+                status_code=400, detail=f"Error during update : {e}"
+            )
+        
+    @router.post(
+        "/post_monitor",
+        dependencies=[Depends(api_key_auth)],
+    )
+    async def post_monitor(item:PostMonitor, db: AsyncSession = Depends(db)):
+        print("monitor_router",item)
+        try:
+            post_monitor = await manager.post_monitor(item=item,db=db)
             return {"success": True}
         except Exception as e:
             raise HTTPException(

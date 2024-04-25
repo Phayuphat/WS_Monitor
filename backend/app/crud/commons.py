@@ -2,9 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import text
 from fastapi import HTTPException
 from typing import Optional, List, Dict, Any, Union
-from app.schemas.commons import (
-DataInitals,DataWi,delete_a_row
-)
+from app.schemas.commons import (DataInitals, DataWi, delete_a_row, PostMonitor)
 
 def convert_result(res):
     return [{c: getattr(r, c) for c in res.keys()} for r in res]
@@ -146,6 +144,26 @@ class CommonsCRUD:
                             "plc_data": item.plc_data,
                             "image_path": item.image_path,
                             "update_at": item.update_at
+                        }
+                    )
+            await db.commit()
+            return rs
+        except Exception as e:
+            raise e
+        
+    async def post_monitor(self,db: AsyncSession, item:PostMonitor):
+        try:
+            stmt = f"""
+            INSERT INTO wi_display (display) 
+            VALUES (:monitor_name)
+            ON CONFLICT (process_id)  
+            DO UPDATE SET
+            display = EXCLUDED.monitor_name
+            """
+            rs = await db.execute(
+                text(stmt),
+                        {
+                        "monitor_name":item.monitor_name
                         }
                     )
             await db.commit()

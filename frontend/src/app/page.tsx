@@ -6,13 +6,13 @@ import {
   Table,
   Form,
   Select,
-  InputNumber,
   Popconfirm,
   Popover,
   Upload,
   message,
   Image,
   Tooltip,
+  Typography
 } from "antd";
 import FormItem from "antd/es/form/FormItem";
 import {
@@ -30,74 +30,22 @@ import type { UploadProps, UploadFile } from "antd";
 import environment from "@/app/utils/environment";
 import axiosInstance from "@/app/utils/axios";
 
-const { Search } = Input;
-const EditableCell: React.FC<EditableCellProps> = ({
-  editing,
-  dataIndex,
-  title,
-  inputType,
-  record,
-  index,
-  children,
-  ...restProps
-}) => {
-  const inputNode =
-    inputType === "number" ? (
-      <InputNumber value={record?.[dataIndex] || 100} />
-    ) : (
-      <Input value={record?.[dataIndex] || 100} />
-    );
-  console.log(
-    "prop",
-    "\ndataIndex: ",
-    dataIndex,
-    "\nrecord: ",
-    record,
-    "\nindex: ",
-    index
-  );
-  console.log("record dataIndex", record?.[dataIndex as string] || null);
-  console.log("record dataIndex2", record?.["plc_data"] === "" ? "yes" : "no");
-
-  return (
-    //input part number ,plac data in table
-    <td {...restProps}>
-      {editing ? (
-        <Form.Item
-          name={dataIndex}
-          style={{ margin: 0 }}
-          rules={[
-            {
-              required: true,
-              message: `Please Input ${title}!`,
-            },
-          ]}
-          initialValue={record?.[dataIndex || ""] || ""}
-        >
-          {inputNode}
-        </Form.Item>
-      ) : (
-        children
-      )}
-    </td>
-  );
-};
-
 const App: React.FC = () => {
+  const { Search } = Input;
   const [form] = Form.useForm();
+  const [InputMonitor, setInputMonitor] = useState<string>("");
+  const [LineName, setLineName] = useState<any>([]);
+  const [Process, setProcess] = useState<any>([]);
+  const [MaxId, setMaxId] = useState<any>([]);
+  const [Data, setData] = useState<Item[]>([]);
+  const [AddRowClick, setAddRowClick] = useState(false);
+  const [EditingKey, setEditingKey] = useState("");
+  const [UploadList, setUploadList] = useState<UploadFile[]>([]);
+  const [DefaultImage, setDefultImage] = useState<any>([]);
+  const [SearchText, setSearchText] = useState("");
+  const [IsDisabled, setDisabled] = useState(true);
+  const [Monitor, setMonitor] = useState<string>("");
 
-  const [inputValue, setInputValue] = useState<string>("");
-  const [linename, set_linename] = useState<any>([]);
-  const [Process, set_process] = useState<any>([]);
-  const [maxId, set_max_id] = useState<any>([]);
-  const [data, set_data] = useState<Item[]>([]);
-  const [add_row_click, set_add_row_click] = useState(false);
-  const [editingKey, set_editing_key] = useState("");
-  const [uploadList, set_uploadlist] = useState<UploadFile[]>([]);
-  const [default_image, set_defult_image] = useState<any>([]);
-  const [searchText, set_search_text] = useState("");
-  const [isDisabled, setDisabled] = useState(true);
-  const [monitor, set_Monitor] = useState<string>("");
 
   //**********************upload image***************************
   const props: UploadProps = {
@@ -110,7 +58,7 @@ const App: React.FC = () => {
       if (info.file.status === "done") {
         message.success(`${info.file.name} file uploaded successfully`);
         console.log(info.file, info.fileList);
-        set_uploadlist(info.fileList);
+        setUploadList(info.fileList);
       } else if (info.file.status === "error") {
         message.error(`${info.file.name} file upload failed.`);
       }
@@ -142,7 +90,7 @@ const App: React.FC = () => {
   ).padStart(2, "0")}`;
 
   //**********************edit func on table***************************
-  const isEditing = (record: Item) => record.key === editingKey;
+  const isEditing = (record: Item) => record.key === EditingKey;
 
   //edit part_number and plc_data only
   const edit = (record: Partial<Item> & { key: React.Key }) => {
@@ -151,23 +99,45 @@ const App: React.FC = () => {
       plc_data: "",
       ...record,
     });
-    set_editing_key(record.key);
+    setEditingKey(record.key);
   };
+  //TODO: make function post_monitor(insert,update)
+  // const handleAddMonitor = (Monitor_Value: any) => {
+  //   setInputMonitor("");
+  //   console.log("monitor_name:", Monitor_Value);
+  // };
 
-  const handleAddMonitor = (inputValue: any) => {
-    setInputValue("");
-    console.log("monitor_name:", inputValue);
+  const handleAddMonitor = async (value: any) => {
+    // const process_id = form.getFieldValue("Process");
+    // console.log("monitor", value)
+    // console.log("process_id", process_id)
+    try {
+      const process_id = form.getFieldValue("Process");
+      const responseDisplay = await axiosInstance.post("/commons/post_monitor", {
+          monitor_name: value
+      });
+      console.log("monitor", value)
+      console.log("process_id", process_id)
+
+      if (responseDisplay.status === 200) {
+        // setMonitor(responseDisplay.data.display_name.at(0).display);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
+  
 
-  const cancel = () => {
-    set_editing_key("");
+  //TODO: whene click cancel button and input = [] to function delete row
+  const cancel = async (id: id_row) => {
+      setEditingKey("");
   };
 
   //save all data in 1 row to database
   const savetoDb = async (savedItem: any, filesPath: any) => {
     savedItem.image_path = filesPath;
 
-    set_defult_image(savedItem.image_path);
+    setDefultImage(savedItem.image_path);
     console.log("image_path :", savedItem);
     const line_id = form.getFieldValue("LineName");
     const process_id = form.getFieldValue("Process");
@@ -191,10 +161,10 @@ const App: React.FC = () => {
     };
 
     //if click add_row_click do post , if not do update
-    if (add_row_click) {
+    if (AddRowClick) {
       post_edit_data(upsertItem);
-      set_add_row_click(false); // Reset the flag after processing
-      set_uploadlist([]);
+      setAddRowClick(false); // Reset the flag after processing
+      // set_uploadlist([]);
     } else {
       update_row(editItem);
       console.log("Put Data : ", upsertItem);
@@ -203,11 +173,10 @@ const App: React.FC = () => {
   // TODO recheck  this function (saveDB to setNewData)
   //func. save row
   const save = async (key: React.Key) => {
+
     try {
       const row = await form.validateFields();
-
-      const newData = [...new Set(data)];
-
+      const newData = [...new Set(Data)];
       const index = newData.findIndex((item) => key === item.key);
 
       if (index > -1) {
@@ -224,15 +193,15 @@ const App: React.FC = () => {
 
         const { key: omitKey, ...savedItem } = updatedItem;
         newData.splice(index, 1, updatedItem);
-        set_data(newData);
-        set_editing_key("");
+        setData(newData);
+        setEditingKey("");
 
-        if (uploadList.length < 1) {
+        if (UploadList.length < 1) {
           savetoDb(savedItem, savedItem.image_path);
         } else {
           try {
             const formData = new FormData();
-            uploadList.forEach((file) => {
+            UploadList.forEach((file) => {
               formData.append("file_uploads", file.originFileObj as File);
             });
             console.log("fromdata", formData);
@@ -264,14 +233,14 @@ const App: React.FC = () => {
     }
     console.log("image change");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [default_image]);
+  }, [DefaultImage]);
 
   //**********************API response (get_linename)**************************
   const fetch_linename = async () => {
     try {
       const response = await axiosInstance.get("/commons/get_linename");
       if (response.status === 200) {
-        set_linename(response.data);
+        setLineName(response.data);
         // console.log(response.data);
       }
     } catch (err) {
@@ -291,7 +260,7 @@ const App: React.FC = () => {
         `/commons/get_process?line_id=${value}`
       );
       if (response_process.status === 200) {
-        set_process(response_process.data.process_name);
+        setProcess(response_process.data.process_name);
       }
     } catch (err) {}
   };
@@ -302,6 +271,7 @@ const App: React.FC = () => {
       form.resetFields(["Process"]);
     } else {
       form.resetFields(["Process"]);
+      
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.getFieldValue("LineName")]);
@@ -309,7 +279,7 @@ const App: React.FC = () => {
   //**********************API response (get_part_number)**************************
   const DisplayChange = async (value: number) => {
     try {
-      const line_id = form.getFieldValue("LineName");
+      //const line_id = form.getFieldValue("LineName");
       //const process_id = form.getFieldValue("Process");
       const responseDisplay = await axiosInstance.get("/commons/get_display", {
         params: {
@@ -317,25 +287,17 @@ const App: React.FC = () => {
         },
       });
       if (responseDisplay.status === 200) {
-        set_Monitor(responseDisplay.data.display_name.at(0).display);
+        setMonitor(responseDisplay.data.display_name.at(0).display);
+        
       }
-      // const responsePartNumber = await axiosInstance.get(
-      //   "/commons/get_part_number",
-      //   {
-      //     params: {
-      //       line_id: line_id,
-      //       process_id: value,
-      //     },
-      //   }
-      // );
     } catch (err) {
       console.error(err);
     }
   };
-
+  //TODO: when LineName is changed, reset monitor
   useEffect(() => {
-    console.log("monitor", monitor);
-  }, [monitor]);
+    console.log("monitor", Monitor);
+  }, [Monitor]);
 
   //*************** API post (post_edit_data) ********** condition for post use with add row (true) ***********
   const post_edit_data = async (upsertItem: EditData) => {
@@ -381,7 +343,7 @@ const App: React.FC = () => {
   };
 
   const unique = new Set();
-  const distinct_line_name = linename.filter((entry: any) => {
+  const distinct_line_name = LineName.filter((entry: any) => {
     const isUnique = !unique.has(entry.line_id);
     unique.add(entry.line_id);
     return isUnique;
@@ -395,7 +357,7 @@ const App: React.FC = () => {
 
   //get data in table ex.image path, plc data, part no., uddate time etc.
   const showData = async () => {
-    set_editing_key("");
+    setEditingKey("");
 
     const line_id = form.getFieldValue("LineName") || "0";
     const process_id = form.getFieldValue("Process") || "0";
@@ -416,7 +378,7 @@ const App: React.FC = () => {
         })
       );
       message.success("Show Data Successfully");
-      set_data(dataWithKeys);
+      setData(dataWithKeys);
       setDisabled(false);
     } else {
       setDisabled(true);
@@ -425,84 +387,118 @@ const App: React.FC = () => {
 
     if (response_wi.status === 200) {
       const maxId = Math.max(...response_wi.data.map((item: any) => item.id));
-      set_max_id(maxId);
-
+      setMaxId(maxId);
       // console.log("max :", maxId);
     }
   };
 
   const onDeleteButtonClick = async (key: React.Key) => {
-    const newData = data.filter((item: any) => item.key !== key);
+    const newData = Data.filter((item: any) => item.key !== key);
     const updatedData = newData.map((item: any, index: any) => ({
       ...item,
       key: String(index + 1),
     }));
-    set_data(updatedData);
+    setData(updatedData);
   };
 
   const onAddButtonClick = () => {
-    if (!editingKey) {
-      const newId = maxId + 1;
+    form.resetFields(["plc_data", "part_no"])
+
+    if (!EditingKey) {
+      const newId = MaxId + 1;
       const newData: Item = {
-        key: String(data.length + 1),
+        key: String(Data.length + 1),
         id: newId,
         part_no: "",
         plc_data: "",
         image_path: [],
         update_at: time_thai,
       };
-
-      set_data([...data, newData]);
-      set_editing_key(newData.key);
+      setData([...Data, newData]);
+      setEditingKey(newData.key);
     }
   };
+
   useEffect(() => {
-    console.log("testaaa", data);
-  }, [data]);
+    console.log("testaaa", Data);
+  }, [Data]);
 
   const columns = [
     {
       title: "Part Number",
       dataIndex: "part_no",
       editable: true,
-      onFilter: (value: any, record: any) =>
+      onFilter: (value: any, record: Item) =>
         record.part_no.toLowerCase().includes(value.toLowerCase()),
       filterIcon: (filtered: any) => (
         <SearchOutlined style={{ color: filtered ? "#1890ff" : undefined }} />
       ),
-      filteredValue: searchText ? [searchText] : null,
-      render: (text: string, record: { part_no: string }) => {
-        if (!searchText) {
+      filteredValue: SearchText ? [SearchText] : null,
+      render: (text: string, record: Item) => {
+        const editable = isEditing(record);
+        if (editable) {
+          return (
+            <Form.Item 
+              name="part_no" 
+              style={{margin: 0}}
+              rules={[{
+                required: true,
+                message: "Please Input Part Number!"
+              }]}
+            >
+              <Input />
+            </Form.Item>
+          );
+        } else if (!SearchText) {
           return <span> {text} </span>;
+        } else {
+          const searchRegex = new RegExp(`(${SearchText})`, "gi");
+          const parts = text.split(searchRegex);
+          return (
+            <span>
+              {parts.map((part, index) =>
+                searchRegex.test(part) ? (
+                  <span key={index} style={{ backgroundColor: "#ffc069" }}>
+                    {part}
+                  </span>
+                ) : (
+                  part
+                )
+              )}
+            </span>
+          );
         }
-
-        const searchRegex = new RegExp(`(${searchText})`, "gi");
-        const parts = text.split(searchRegex);
-        return (
-          <span>
-            {parts.map((part, index) =>
-              searchRegex.test(part) ? (
-                <span key={index} style={{ backgroundColor: "#ffc069" }}>
-                  {part}
-                </span>
-              ) : (
-                part
-              )
-            )}
-          </span>
-        );
-      },
+      }
     },
     {
       title: "PLC Data",
       dataIndex: "plc_data",
       editable: true,
+      render: (_:any, record:Item) => {
+        const editable = isEditing(record);
+        return editable ? (
+          <Form.Item 
+            name="plc_data" 
+            style={{margin: 0}}
+            rules={[
+                {
+                  required: true,
+                  message: `Please Input PLC Data`,
+                },
+              ]}>
+            <Input />
+          </Form.Item>
+
+        ) : (
+          record.plc_data
+        )
+      }
     },
     {
       title: "Image Preview",
       dataIndex: "image_path",
       width: 500,
-      render: (image_path: any, record: any) => (
+      render: (image_path: any, record: Item) => (
         <div
           style={{
             display: "flex",
@@ -525,7 +521,7 @@ const App: React.FC = () => {
             ))}
           </Popover>
 
-          {editingKey === record.key && (
+          {EditingKey === record.key && (
             <>
               <Tooltip title="Upload Image">
                 <Upload {...props}>
@@ -556,7 +552,6 @@ const App: React.FC = () => {
       width: 200,
       render: (_: any, record: Item) => {
         const editable = isEditing(record);
-
         console.log("test", record);
 
         return (
@@ -571,7 +566,7 @@ const App: React.FC = () => {
                     onClick={() => save(record.key)}
                     //TODO: when click edit but save button is disabled (uploadList > 1)
                     //TODO: when no plc_data and part_no in the form, show save button as disabled
-                    disabled={uploadList.length < 1 ? true : false}
+                    disabled={UploadList.length < 1 ? true : false}
                     style={{
                       boxShadow: "3px 3px 10px ",
                       width: "50px",
@@ -588,7 +583,7 @@ const App: React.FC = () => {
                   <Button
                     type="primary"
                     onClick={() => {
-                      cancel();
+                      cancel(record);
                     }}
                     style={{
                       boxShadow: "3px 3px 10px 0px",
@@ -605,7 +600,7 @@ const App: React.FC = () => {
                 <Tooltip title="Edit">
                   <Button
                     type="primary"
-                    disabled={editingKey !== "" && editingKey !== record.key}
+                    disabled={EditingKey !== "" && EditingKey !== record.key}
                     onClick={() => {
                       edit(record);
                     }}
@@ -633,7 +628,7 @@ const App: React.FC = () => {
                     <Button
                       type="primary"
                       danger
-                      disabled={editingKey !== "" && editingKey !== record.key}
+                      disabled={EditingKey !== "" && EditingKey !== record.key}
                       style={{
                         boxShadow: "3px 3px 10px 0px",
                         width: "50px",
@@ -746,6 +741,7 @@ const App: React.FC = () => {
                 placeholder="Select a Process"
                 style={{ width: 350 }}
                 onSelect={DisplayChange}
+                onChange={DisplayChange}
                 disabled={distinct_process < 1}
               >
                 {distinct_process.map((item: any) => (
@@ -765,24 +761,22 @@ const App: React.FC = () => {
               label={
                 <div>
                   <span className="custom-label">Monitor</span>
-                  {/* TODO: make function post_monitor(insert,update) */}
                   <Popconfirm
                     title={
                       <Input
-                        value={inputValue}
+                        style={{width:"300px"}}
+                        value={InputMonitor}
                         placeholder="Add Monitor"
-                        onChange={(record) =>
-                          setInputValue(record.target.value)
-                        }
+                        onChange={(record) => setInputMonitor(record.target.value)}
                       />
                     }
-                    onConfirm={() => handleAddMonitor(inputValue)}
+                    onConfirm={() => handleAddMonitor(InputMonitor)}
                     okText="Save"
                     cancelText="Cancle"
                   >
-                    <a style={{ fontSize: "20px", paddingLeft: 5 }}>
+                    <Typography.Link className="button_monitor" disabled={distinct_process < 1}>
                       <PlusCircleOutlined />
-                    </a>
+                    </Typography.Link >
                   </Popconfirm>
                 </div>
               }
@@ -793,7 +787,7 @@ const App: React.FC = () => {
                   className="monitor_name"
                   style={{ fontSize: 20, fontWeight: "bold", color: "blue" }}
                 >
-                  {monitor}
+                  {Monitor}
                 </span>
               </div>
             </FormItem>
@@ -836,7 +830,7 @@ const App: React.FC = () => {
               <Search
                 placeholder="Filter a part number"
                 style={{ width: 300, marginRight: "2rem" }}
-                onSearch={(value) => set_search_text(value)}
+                onSearch={(value) => setSearchText(value)}
                 allowClear
               />
             </FormItem>
@@ -853,11 +847,12 @@ const App: React.FC = () => {
                   type="primary"
                   onClick={() => {
                     onAddButtonClick();
-                    set_add_row_click(true);
+                    setAddRowClick(true);
+                    setUploadList([]);
                   }}
                   style={{ boxShadow: "3px 3px 10px 0px" }}
                   icon={<PlusOutlined />}
-                  disabled={isDisabled}
+                  disabled={IsDisabled}
                 >
                   Add
                 </Button>
@@ -873,12 +868,7 @@ const App: React.FC = () => {
           >
             <Table
               className="edit_table"
-              components={{
-                body: {
-                  cell: EditableCell,
-                },
-              }}
-              dataSource={data}
+              dataSource={Data}
               columns={mergedColumns.map((column) => ({
                 ...column,
                 title:
