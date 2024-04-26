@@ -96,8 +96,8 @@ def commons_routers(db: AsyncGenerator) -> APIRouter:
     async def get_display(process_id: str, db: AsyncSession = Depends(db)):
         print("Showwwwwwwwww")
         try:
-            display = await manager.get_display(process_id=process_id, db=db)
-            return display_data(display_name=display)
+            monitor_name = await manager.get_display(process_id=process_id, db=db)
+            return display_data(monitor_name=monitor_name)
         except Exception as e:
             raise HTTPException(
                 status_code=400, detail=f"Error during get data : {e}"

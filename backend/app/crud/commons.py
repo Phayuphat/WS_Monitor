@@ -10,7 +10,6 @@ class CommonsCRUD:
     def __init__(self):
         pass
     
-    
     async def get_data_initials(
         self,db: AsyncSession,
     ):
@@ -98,7 +97,7 @@ class CommonsCRUD:
         process_id = int(process_id)
         try:
             stmt = f"""
-            SELECT display FROM wi_display 
+            SELECT monitor_name FROM wi_display 
             WHERE process_id =:process_id;
             """
             rs = await db.execute(text(stmt),{"process_id": process_id})
@@ -150,22 +149,24 @@ class CommonsCRUD:
             return rs
         except Exception as e:
             raise e
-        
-    async def post_monitor(self,db: AsyncSession, item:PostMonitor):
+    
+    async def post_monitor(self, db: AsyncSession, item: PostMonitor):
         try:
-            stmt = f"""
-            INSERT INTO wi_display (display) 
-            VALUES (:monitor_name)
-            ON CONFLICT (process_id)  
-            DO UPDATE SET
-            display = EXCLUDED.monitor_name
-            """
+            stmt = """
+                INSERT INTO wi_display (process_id, monitor_name) 
+                VALUES (:process_id, :monitor_name)
+                ON CONFLICT (process_id)
+                DO UPDATE SET
+                process_id = EXCLUDED.process_id,
+                monitor_name = EXCLUDED.monitor_name
+                """
             rs = await db.execute(
                 text(stmt),
-                        {
-                        "monitor_name":item.monitor_name
-                        }
-                    )
+                {
+                    "process_id": item.process_id,
+                    "monitor_name": item.monitor_name
+                }
+            )
             await db.commit()
             return rs
         except Exception as e:

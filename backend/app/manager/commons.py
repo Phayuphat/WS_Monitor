@@ -130,7 +130,7 @@ class CommonsManager:
             key_index = r._key_to_index
             return_list.append(
                 display(
-                    display=r[key_index["display"]],
+                    monitor_name=r[key_index["monitor_name"]],
                 )
             )
         return return_list
@@ -175,7 +175,7 @@ class CommonsManager:
         db: AsyncSession = None,
     ):
         print("monitor_manager",item)
-        await self.crud.post_edit_data(db=db, item=item)
+        await self.crud.post_monitor(db=db, item=item)
         return True
 
 

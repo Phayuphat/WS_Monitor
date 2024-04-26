@@ -16,6 +16,7 @@ class DataInitalsResponse(BaseModel):
 
 ################################################
 class PostMonitor(BaseModel):
+    process_id: int
     monitor_name: str
 
 class PostData(BaseModel):
@@ -64,9 +65,9 @@ class part_number_data(BaseModel):
     part_number_name:List[part_no]
 
 class display(BaseModel):
-    display:str
+    monitor_name:str
 class display_data(BaseModel):
-    display_name:List[display]
+    monitor_name:List[display]
 
     
 class wi_table(BaseModel):

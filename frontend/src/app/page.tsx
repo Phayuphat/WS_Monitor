@@ -101,31 +101,7 @@ const App: React.FC = () => {
     });
     setEditingKey(record.key);
   };
-  //TODO: make function post_monitor(insert,update)
-  // const handleAddMonitor = (Monitor_Value: any) => {
-  //   setInputMonitor("");
-  //   console.log("monitor_name:", Monitor_Value);
-  // };
 
-  const handleAddMonitor = async (value: any) => {
-    // const process_id = form.getFieldValue("Process");
-    // console.log("monitor", value)
-    // console.log("process_id", process_id)
-    try {
-      const process_id = form.getFieldValue("Process");
-      const responseDisplay = await axiosInstance.post("/commons/post_monitor", {
-          monitor_name: value
-      });
-      console.log("monitor", value)
-      console.log("process_id", process_id)
-
-      if (responseDisplay.status === 200) {
-        // setMonitor(responseDisplay.data.display_name.at(0).display);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
   
 
   //TODO: whene click cancel button and input = [] to function delete row
@@ -279,21 +255,19 @@ const App: React.FC = () => {
   //**********************API response (get_part_number)**************************
   const DisplayChange = async (value: number) => {
     try {
-      //const line_id = form.getFieldValue("LineName");
-      //const process_id = form.getFieldValue("Process");
       const responseDisplay = await axiosInstance.get("/commons/get_display", {
         params: {
           process_id: value,
         },
       });
       if (responseDisplay.status === 200) {
-        setMonitor(responseDisplay.data.display_name.at(0).display);
-        
+        // setMonitor(responseDisplay.data.monitor_name);
       }
     } catch (err) {
       console.error(err);
     }
   };
+
   //TODO: when LineName is changed, reset monitor
   useEffect(() => {
     console.log("monitor", Monitor);
@@ -314,6 +288,29 @@ const App: React.FC = () => {
       console.error("Error post data:", error);
     }
   };
+
+const handleAddMonitor = async (value: string) => {
+  try {
+    const process_id = form.getFieldValue("Process");
+    const responseDisplay = await axiosInstance.post("/commons/post_monitor", {
+      process_id: process_id, 
+      monitor_name: value,
+    });
+
+// TODO: set show monitor name
+    if (responseDisplay.status === 200) {
+    
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+useEffect(() => {
+  
+});
+
+
   //********************** API delete (delete_row) **************************
   const delete_row = async (id: id_row) => {
     try {
