@@ -12,7 +12,7 @@ import {
   message,
   Image,
   Tooltip,
-  Typography
+  Typography,
 } from "antd";
 import FormItem from "antd/es/form/FormItem";
 import {
@@ -26,7 +26,9 @@ import {
   QuestionCircleOutlined,
   PlusCircleOutlined,
 } from "@ant-design/icons";
-import type { UploadProps, UploadFile } from "antd";
+// import { BsTerminalPlus } from "react-icons/bs"; >>>>> plus
+// import { BiSolidEdit } from "react-icons/bi"; >>>>> edit
+import type * as antd from "antd";
 import environment from "@/app/utils/environment";
 import axiosInstance from "@/app/utils/axios";
 
@@ -36,19 +38,19 @@ const App: React.FC = () => {
   const [InputMonitor, setInputMonitor] = useState<string>("");
   const [LineName, setLineName] = useState<any>([]);
   const [Process, setProcess] = useState<any>([]);
-  const [MaxId, setMaxId] = useState<any>([]);
+  const [MaxId, setMaxId] = useState<number>(0);
   const [Data, setData] = useState<Item[]>([]);
   const [AddRowClick, setAddRowClick] = useState(false);
   const [EditingKey, setEditingKey] = useState("");
-  const [UploadList, setUploadList] = useState<UploadFile[]>([]);
+  const [UploadList, setUploadList] = useState<antd.UploadFile[]>([]);
   const [DefaultImage, setDefultImage] = useState<any>([]);
   const [SearchText, setSearchText] = useState("");
   const [IsDisabled, setDisabled] = useState(true);
   const [Monitor, setMonitor] = useState<string>("");
-
+  const [OpenPopover, setOpenPopover] = useState(false);
 
   //**********************upload image***************************
-  const props: UploadProps = {
+  const props: antd.UploadProps = {
     name: "file",
     action: `${environment.API_URL}/static/temp`,
     onChange(info) {
@@ -102,11 +104,9 @@ const App: React.FC = () => {
     setEditingKey(record.key);
   };
 
-  
-
   //TODO: whene click cancel button and input = [] to function delete row
   const cancel = async (id: id_row) => {
-      setEditingKey("");
+    setEditingKey("");
   };
 
   //save all data in 1 row to database
@@ -140,7 +140,7 @@ const App: React.FC = () => {
     if (AddRowClick) {
       post_edit_data(upsertItem);
       setAddRowClick(false); // Reset the flag after processing
-      // set_uploadlist([]);
+      // setUploadList([]);
     } else {
       update_row(editItem);
       console.log("Put Data : ", upsertItem);
@@ -149,7 +149,6 @@ const App: React.FC = () => {
   // TODO recheck  this function (saveDB to setNewData)
   //func. save row
   const save = async (key: React.Key) => {
-
     try {
       const row = await form.validateFields();
       const newData = [...new Set(Data)];
@@ -158,14 +157,35 @@ const App: React.FC = () => {
       if (index > -1) {
         const item = newData[index];
         const updatedItem = { ...item, ...row };
-
-        const part_number_check = newData.every(
-          (item) => item.key === key || item.part_no !== updatedItem.part_no
+        
+        const uniqueCheck = newData.every(
+          (item) => item.key === key || (item.part_no !== updatedItem.part_no && item.plc_data !== updatedItem.plc_data)
         );
-        if (!part_number_check) {
-          message.error("Please change the part number, it must be unique!");
-          return;
-        }
+          if (!uniqueCheck) {
+            const duplicateItem = newData.find((item) => item.part_no === updatedItem.part_no && item.key !== key);
+            if (duplicateItem) {
+              message.error("Please change the part number, it must be unique!");
+            } else {
+              message.error("Please change the plc data, it must be unique!");
+            }
+            return;
+          }
+        // const part_number_check = newData.every(
+        //   (item) => item.key === key || item.part_no !== updatedItem.part_no
+        // );
+        // const plc_data_check = newData.every(
+        //   (item) => item.key === key || item.plc_data !== updatedItem.plc_data
+        // );
+        
+        // if (!part_number_check || !plc_data_check) {
+        //   if (!part_number_check) {
+        //     message.error("Please change the part number, it must be unique!");
+        //   }
+        //   if (!plc_data_check) {
+        //     message.error("Please change the plc data, it must be unique!");
+        //   }
+        //   return;
+        // }
 
         const { key: omitKey, ...savedItem } = updatedItem;
         newData.splice(index, 1, updatedItem);
@@ -190,8 +210,7 @@ const App: React.FC = () => {
 
             if (response.status === 200 || response.data.length < 1) {
               savetoDb(savedItem, response.data);
-            } else {
-            }
+            } 
           } catch (err) {
             console.error(err);
           }
@@ -231,7 +250,6 @@ const App: React.FC = () => {
   //**********************API response (get_process)**************************
   const LineNameChange = async (value: string) => {
     try {
-      // const line_name = form.getFieldValue("LineName");
       const response_process = await axiosInstance.get(
         `/commons/get_process?line_id=${value}`
       );
@@ -243,35 +261,38 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (form.getFieldValue("LineName") === undefined) {
-      setDisabled(true);
       form.resetFields(["Process"]);
+      setDisabled(true);
     } else {
       form.resetFields(["Process"]);
-      
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.getFieldValue("LineName")]);
 
-  //**********************API response (get_part_number)**************************
+  //**********************API response (get_monitor_name)**************************
   const DisplayChange = async (value: number) => {
+    setDisabled(true);
+
     try {
       const responseDisplay = await axiosInstance.get("/commons/get_display", {
         params: {
           process_id: value,
         },
       });
-      if (responseDisplay.status === 200) {
-        // setMonitor(responseDisplay.data.monitor_name);
+      //console.log(responseDisplay.data.monitor_name[0])
+      if (
+        responseDisplay.status === 200 &&
+        responseDisplay.data.monitor_name[0] !== undefined
+      ) {
+        // form.resetFields(["InputMonitor"])
+        setMonitor(responseDisplay.data.monitor_name[0].monitor_name);
+      } else {
+        setMonitor("");
       }
     } catch (err) {
       console.error(err);
     }
   };
-
-  //TODO: when LineName is changed, reset monitor
-  useEffect(() => {
-    console.log("monitor", Monitor);
-  }, [Monitor]);
 
   //*************** API post (post_edit_data) ********** condition for post use with add row (true) ***********
   const post_edit_data = async (upsertItem: EditData) => {
@@ -289,27 +310,35 @@ const App: React.FC = () => {
     }
   };
 
-const handleAddMonitor = async (value: string) => {
-  try {
-    const process_id = form.getFieldValue("Process");
-    const responseDisplay = await axiosInstance.post("/commons/post_monitor", {
-      process_id: process_id, 
-      monitor_name: value,
-    });
+  const hide = () => {
+    setOpenPopover(false);
+  };
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpenPopover(newOpen);
+  };
 
-// TODO: set show monitor name
-    if (responseDisplay.status === 200) {
-    
+
+  const handleAddMonitor = async (value: string) => {
+
+    try {
+      const process_id = form.getFieldValue("Process");
+      const responseDisplay = await axiosInstance.post(
+        "/commons/post_monitor",
+        {
+          process_id: process_id,
+          monitor_name: value,
+        }
+      );
+
+      if (responseDisplay.status === 200 ) {
+        DisplayChange(process_id);
+        setOpenPopover(false);
+        form.resetFields(["InputMonitor"])
+      }
+    } catch (err) {
+      console.error(err);
     }
-  } catch (err) {
-    console.error(err);
-  }
-};
-
-useEffect(() => {
-  
-});
-
+  };
 
   //********************** API delete (delete_row) **************************
   const delete_row = async (id: id_row) => {
@@ -399,7 +428,7 @@ useEffect(() => {
   };
 
   const onAddButtonClick = () => {
-    form.resetFields(["plc_data", "part_no"])
+    form.resetFields(["plc_data", "part_no"]);
 
     if (!EditingKey) {
       const newId = MaxId + 1;
@@ -435,13 +464,15 @@ useEffect(() => {
         const editable = isEditing(record);
         if (editable) {
           return (
-            <Form.Item 
-              name="part_no" 
-              style={{margin: 0}}
-              rules={[{
-                required: true,
-                message: "Please Input Part Number!"
-              }]}
+            <Form.Item
+              name="part_no"
+              style={{ margin: 0 }}
+              rules={[
+                {
+                  required: true,
+                  message: "Please Input Part Number!",
+                },
+              ]}
             >
               <Input />
             </Form.Item>
@@ -465,31 +496,31 @@ useEffect(() => {
             </span>
           );
         }
-      }
+      },
     },
     {
       title: "PLC Data",
       dataIndex: "plc_data",
       editable: true,
-      render: (_:any, record:Item) => {
+      render: (_: any, record: Item) => {
         const editable = isEditing(record);
         return editable ? (
-          <Form.Item 
-            name="plc_data" 
-            style={{margin: 0}}
+          <Form.Item
+            name="plc_data"
+            style={{ margin: 0 }}
             rules={[
-                {
-                  required: true,
-                  message: `Please Input PLC Data`,
-                },
-              ]}>
+              {
+                required: true,
+                message: `Please Input PLC Data`,
+              },
+            ]}
+          >
             <Input />
           </Form.Item>
-
         ) : (
           record.plc_data
-        )
-      }
+        );
+      },
     },
     {
       title: "Image Preview",
@@ -752,40 +783,60 @@ useEffect(() => {
                 ))}
               </Select>
             </FormItem>
+              
 
             <FormItem
               name="monitor_id"
               label={
                 <div>
-                  <span className="custom-label">Monitor</span>
-                  <Popconfirm
-                    title={
-                      <Input
-                        style={{width:"300px"}}
-                        value={InputMonitor}
-                        placeholder="Add Monitor"
-                        onChange={(record) => setInputMonitor(record.target.value)}
-                      />
+                  <span className="custom-label"> Monitor </span>
+                  <Popover
+                    title="Add Monitor Name"
+                    onOpenChange={handleOpenChange}
+                    open={OpenPopover}
+                    trigger="click"
+                    content={
+                      <FormItem name={"InputMonitor"}>
+                        <Input
+                          style={{ width: "300px" }}
+                          placeholder="Add Monitor Name"
+                          onChange={(record) => {setInputMonitor(record.target.value);}}
+                        />
+                          <Button 
+                            type="primary" 
+                            style={{margin:"5px"}} 
+                            onClick={() => {
+                              if (InputMonitor !== ""){
+                                handleAddMonitor(InputMonitor)
+                              }
+                            }}>
+                              Add
+                          </Button>
+                          <Button 
+                            type="default" 
+                            style={{margin:"3px"}}
+                            onClick={hide}>
+                              Cancle
+                          </Button> 
+                      </FormItem>
                     }
-                    onConfirm={() => handleAddMonitor(InputMonitor)}
-                    okText="Save"
-                    cancelText="Cancle"
                   >
-                    <Typography.Link className="button_monitor" disabled={distinct_process < 1}>
-                      <PlusCircleOutlined />
-                    </Typography.Link >
-                  </Popconfirm>
+                  </Popover>
                 </div>
               }
             >
               {/*Dispaly show*/}
               <div style={{ width: "200px" }}>
+              <>
                 <span
                   className="monitor_name"
-                  style={{ fontSize: 20, fontWeight: "bold", color: "blue" }}
-                >
+                  style={{ fontSize: 20, fontWeight: "bold", color: "blue" }}>
                   {Monitor}
                 </span>
+                <Typography.Link className="button_monitor" disabled={distinct_process < 1} onClick={() => setOpenPopover(true)}>
+                      <PlusCircleOutlined />
+                </Typography.Link>
+              </>
               </div>
             </FormItem>
 
@@ -802,7 +853,6 @@ useEffect(() => {
                 htmlType="submit"
                 style={{ fontSize: 15, boxShadow: "3px 3px 10px 0px " }}
               >
-                {" "}
                 Search
                 <SearchOutlined />
               </Button>
@@ -814,7 +864,7 @@ useEffect(() => {
         <Form form={form} component={false}>
           <div className="search and add" style={{ display: "flex" }}>
             <FormItem
-              className="search part no"
+              className="search"
               style={{
                 display: "flex",
                 alignItems: "left",
