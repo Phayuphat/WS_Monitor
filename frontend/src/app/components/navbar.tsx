@@ -20,7 +20,7 @@ export const Navbar = () => {
           priority={true}
         ></Image>
       </div>
-      <div style={{ paddingLeft: "40%", fontSize: 40, paddingTop: "1rem" }}>
+      <div style={{ paddingLeft: "40%", fontSize: 40, paddingTop: "1rem", fontWeight: "bold" }}>
         Admin
       </div>
     </div>

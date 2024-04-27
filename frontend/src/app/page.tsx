@@ -26,8 +26,6 @@ import {
   QuestionCircleOutlined,
   PlusCircleOutlined,
 } from "@ant-design/icons";
-// import { BsTerminalPlus } from "react-icons/bs"; >>>>> plus
-// import { BiSolidEdit } from "react-icons/bi"; >>>>> edit
 import type * as antd from "antd";
 import environment from "@/app/utils/environment";
 import axiosInstance from "@/app/utils/axios";
@@ -49,7 +47,7 @@ const App: React.FC = () => {
   const [Monitor, setMonitor] = useState<string>("");
   const [OpenPopover, setOpenPopover] = useState(false);
 
-  //**********************upload image***************************
+  //********************** upload imag ***************************
   const props: antd.UploadProps = {
     name: "file",
     action: `${environment.API_URL}/static/temp`,
@@ -67,7 +65,7 @@ const App: React.FC = () => {
     },
   };
 
-  //**********************set time thailand***************************
+  //********************** set time thailand ***************************
   const currentDate = new Date();
   const time_thai = `${String(currentDate.getDate()).padStart(2, "0")} ${
     [
@@ -91,7 +89,7 @@ const App: React.FC = () => {
     currentDate.getSeconds()
   ).padStart(2, "0")}`;
 
-  //**********************edit func on table***************************
+  //********************** edit func on table ***************************
   const isEditing = (record: Item) => record.key === EditingKey;
 
   //edit part_number and plc_data only
@@ -99,22 +97,21 @@ const App: React.FC = () => {
     form.setFieldsValue({
       part_no: "",
       plc_data: "",
+      image_path: record.image_path,
       ...record,
     });
     setEditingKey(record.key);
   };
 
-  //TODO: whene click cancel button and input = [] to function delete row
-  const cancel = async (id: id_row) => {
+  const cancel = async (record: Item) => {
     setEditingKey("");
   };
 
   //save all data in 1 row to database
   const savetoDb = async (savedItem: any, filesPath: any) => {
     savedItem.image_path = filesPath;
-
     setDefultImage(savedItem.image_path);
-    console.log("image_path :", savedItem);
+
     const line_id = form.getFieldValue("LineName");
     const process_id = form.getFieldValue("Process");
     const upsertItem = {
@@ -140,10 +137,8 @@ const App: React.FC = () => {
     if (AddRowClick) {
       post_edit_data(upsertItem);
       setAddRowClick(false); // Reset the flag after processing
-      // setUploadList([]);
     } else {
       update_row(editItem);
-      console.log("Put Data : ", upsertItem);
     }
   };
   // TODO recheck  this function (saveDB to setNewData)
@@ -157,35 +152,24 @@ const App: React.FC = () => {
       if (index > -1) {
         const item = newData[index];
         const updatedItem = { ...item, ...row };
-        
+
         const uniqueCheck = newData.every(
-          (item) => item.key === key || (item.part_no !== updatedItem.part_no && item.plc_data !== updatedItem.plc_data)
+          (item) =>
+            item.key === key ||
+            (item.part_no !== updatedItem.part_no &&
+              item.plc_data !== updatedItem.plc_data)
         );
-          if (!uniqueCheck) {
-            const duplicateItem = newData.find((item) => item.part_no === updatedItem.part_no && item.key !== key);
-            if (duplicateItem) {
-              message.error("Please change the part number, it must be unique!");
-            } else {
-              message.error("Please change the plc data, it must be unique!");
-            }
-            return;
+        if (!uniqueCheck) {
+          const duplicateItem = newData.find(
+            (item) => item.part_no === updatedItem.part_no && item.key !== key
+          );
+          if (duplicateItem) {
+            message.error("Please change the part number, it must be unique!");
+          } else {
+            message.error("Please change the plc data, it must be unique!");
           }
-        // const part_number_check = newData.every(
-        //   (item) => item.key === key || item.part_no !== updatedItem.part_no
-        // );
-        // const plc_data_check = newData.every(
-        //   (item) => item.key === key || item.plc_data !== updatedItem.plc_data
-        // );
-        
-        // if (!part_number_check || !plc_data_check) {
-        //   if (!part_number_check) {
-        //     message.error("Please change the part number, it must be unique!");
-        //   }
-        //   if (!plc_data_check) {
-        //     message.error("Please change the plc data, it must be unique!");
-        //   }
-        //   return;
-        // }
+          return;
+        }
 
         const { key: omitKey, ...savedItem } = updatedItem;
         newData.splice(index, 1, updatedItem);
@@ -200,24 +184,23 @@ const App: React.FC = () => {
             UploadList.forEach((file) => {
               formData.append("file_uploads", file.originFileObj as File);
             });
-            console.log("fromdata", formData);
 
             const response = await axiosInstance.post(
               "/commons/upload",
               formData
             );
-            console.log("99999", response.data);
 
             if (response.status === 200 || response.data.length < 1) {
               savetoDb(savedItem, response.data);
-            } 
+              setUploadList([]);
+            }
           } catch (err) {
-            console.error(err);
+            return err;
           }
         }
       }
     } catch (err) {
-      console.error("Validate Failed:", err);
+      return err;
     }
   };
 
@@ -226,7 +209,6 @@ const App: React.FC = () => {
     if (form.getFieldValue("LineName") !== undefined) {
       showData();
     }
-    console.log("image change");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [DefaultImage]);
 
@@ -236,7 +218,6 @@ const App: React.FC = () => {
       const response = await axiosInstance.get("/commons/get_linename");
       if (response.status === 200) {
         setLineName(response.data);
-        // console.log(response.data);
       }
     } catch (err) {
       console.error(err);
@@ -255,6 +236,8 @@ const App: React.FC = () => {
       );
       if (response_process.status === 200) {
         setProcess(response_process.data.process_name);
+        setDisabled(true);
+        setMonitor("");
       }
     } catch (err) {}
   };
@@ -262,7 +245,6 @@ const App: React.FC = () => {
   useEffect(() => {
     if (form.getFieldValue("LineName") === undefined) {
       form.resetFields(["Process"]);
-      setDisabled(true);
     } else {
       form.resetFields(["Process"]);
     }
@@ -272,19 +254,17 @@ const App: React.FC = () => {
   //**********************API response (get_monitor_name)**************************
   const DisplayChange = async (value: number) => {
     setDisabled(true);
-
     try {
       const responseDisplay = await axiosInstance.get("/commons/get_display", {
         params: {
           process_id: value,
         },
       });
-      //console.log(responseDisplay.data.monitor_name[0])
+
       if (
         responseDisplay.status === 200 &&
         responseDisplay.data.monitor_name[0] !== undefined
       ) {
-        // form.resetFields(["InputMonitor"])
         setMonitor(responseDisplay.data.monitor_name[0].monitor_name);
       } else {
         setMonitor("");
@@ -312,14 +292,13 @@ const App: React.FC = () => {
 
   const hide = () => {
     setOpenPopover(false);
+    form.resetFields(["InputMonitor"]);
   };
   const handleOpenChange = (newOpen: boolean) => {
     setOpenPopover(newOpen);
   };
 
-
   const handleAddMonitor = async (value: string) => {
-
     try {
       const process_id = form.getFieldValue("Process");
       const responseDisplay = await axiosInstance.post(
@@ -330,10 +309,10 @@ const App: React.FC = () => {
         }
       );
 
-      if (responseDisplay.status === 200 ) {
+      if (responseDisplay.status === 200) {
         DisplayChange(process_id);
         setOpenPopover(false);
-        form.resetFields(["InputMonitor"])
+        form.resetFields(["InputMonitor"]);
       }
     } catch (err) {
       console.error(err);
@@ -387,7 +366,6 @@ const App: React.FC = () => {
 
     const line_id = form.getFieldValue("LineName") || "0";
     const process_id = form.getFieldValue("Process") || "0";
-
     const response_wi = await axiosInstance.get("/commons/get_wi_data");
     const responsedata = await axiosInstance.get("/commons/get_wi_table", {
       params: {
@@ -414,7 +392,6 @@ const App: React.FC = () => {
     if (response_wi.status === 200) {
       const maxId = Math.max(...response_wi.data.map((item: any) => item.id));
       setMaxId(maxId);
-      // console.log("max :", maxId);
     }
   };
 
@@ -429,7 +406,6 @@ const App: React.FC = () => {
 
   const onAddButtonClick = () => {
     form.resetFields(["plc_data", "part_no"]);
-
     if (!EditingKey) {
       const newId = MaxId + 1;
       const newData: Item = {
@@ -444,10 +420,6 @@ const App: React.FC = () => {
       setEditingKey(newData.key);
     }
   };
-
-  useEffect(() => {
-    console.log("testaaa", Data);
-  }, [Data]);
 
   const columns = [
     {
@@ -466,7 +438,6 @@ const App: React.FC = () => {
           return (
             <Form.Item
               name="part_no"
-              style={{ margin: 0 }}
               rules={[
                 {
                   required: true,
@@ -507,7 +478,6 @@ const App: React.FC = () => {
         return editable ? (
           <Form.Item
             name="plc_data"
-            style={{ margin: 0 }}
             rules={[
               {
                 required: true,
@@ -526,17 +496,10 @@ const App: React.FC = () => {
       title: "Image Preview",
       dataIndex: "image_path",
       width: 500,
-      render: (image_path: any, record: Item) => (
-        <div
-          style={{
-            display: "flex",
-            gap: "1rem",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
+      render: (_: any, record: Item) => (
+        <div className="image_show">
           <Popover title={record.part_no}>
-            {record.image_path.map((image_path: any, index: any) => (
+            {record.image_path.map((image_path: any, index: number) => (
               <div key={`${record.id}-${index}`}>
                 <Image
                   src={`${environment.API_URL}${image_path.url}`}
@@ -552,13 +515,11 @@ const App: React.FC = () => {
           {EditingKey === record.key && (
             <>
               <Tooltip title="Upload Image">
-                <Upload {...props}>
+                <Upload {...props} listType="picture">
                   <Button
+                    className="upload_button"
                     type="primary"
-                    style={{
-                      boxShadow: "5px 5px 20px 0px",
-                      width: "80px",
-                    }}
+                    style={{ boxShadow: "5px 5px 20px 0px", width: "80px" }}
                     icon={<UploadOutlined />}
                   ></Button>
                 </Upload>
@@ -572,8 +533,11 @@ const App: React.FC = () => {
       title: "Update Time",
       dataIndex: "update_at",
       width: 250,
-      render: (update_at: string, record: any) => <div>{record.update_at}</div>,
+      render: (update_at: string) => (
+        <div className="update_at">{update_at}</div>
+      ),
     },
+
     {
       title: "Action",
       dataIndex: "action",
@@ -583,18 +547,16 @@ const App: React.FC = () => {
         console.log("test", record);
 
         return (
-          <span
-            style={{ display: "flex", gap: "10px", justifyContent: "center" }}
-          >
+          <span className="actions-group">
             {editable ? (
               <span>
                 <Tooltip title="Save">
                   <Button
                     type="primary"
                     onClick={() => save(record.key)}
-                    //TODO: when click edit but save button is disabled (uploadList > 1)
-                    //TODO: when no plc_data and part_no in the form, show save button as disabled
-                    disabled={UploadList.length < 1 ? true : false}
+                    disabled={
+                      UploadList.length < 1 && AddRowClick ? true : false
+                    }
                     style={{
                       boxShadow: "3px 3px 10px ",
                       width: "50px",
@@ -610,8 +572,17 @@ const App: React.FC = () => {
                 <Tooltip title="Cancel">
                   <Button
                     type="primary"
-                    onClick={() => {
-                      cancel(record);
+                    onClick={async () => {
+                      const ID = {
+                        id: record.id,
+                      };
+                      if (record.part_no !== "" && record.plc_data !== "") {
+                        cancel(record);
+                      } else {
+                        onDeleteButtonClick(record.key);
+                        delete_row(ID);
+                        setEditingKey("");
+                      }
                     }}
                     style={{
                       boxShadow: "3px 3px 10px 0px",
@@ -624,7 +595,7 @@ const App: React.FC = () => {
                 </Tooltip>
               </span>
             ) : (
-              <span style={{ borderWidth: "200px" }}>
+              <span>
                 <Tooltip title="Edit">
                   <Button
                     type="primary"
@@ -693,40 +664,17 @@ const App: React.FC = () => {
 
   return (
     <div>
-      <div
-        style={{
-          paddingTop: "1rem",
-        }}
-      >
-        <div
-          className="selector"
-          style={{
-            borderRadius: "5px",
-            border: "solid lightgray 2px",
-            flex: "1",
-            display: "flex",
-            flexDirection: "column",
-            backgroundColor: "white",
-            alignItems: "center",
-            justifyContent: "center",
-            paddingTop: "1.5rem",
-          }}
-        >
-          {" "}
-          {/* <h1>Admin</h1> */}
+      <div className="header">
+        <div className="box_header">
           <Form
+            className="form_selector"
             form={form}
-            style={{ display: "flex", gap: "2rem" }}
             onFinish={(x) => console.log(x)}
           >
             <FormItem
               name="LineName"
               rules={[{ required: true, message: "LineName is required" }]}
-              label={
-                <span className="custom-label" style={{ fontSize: 20 }}>
-                  Line Name
-                </span>
-              }
+              label={<span className="label_name">Line Name</span>}
             >
               <Select
                 showSearch
@@ -757,11 +705,7 @@ const App: React.FC = () => {
             <FormItem
               name="Process"
               rules={[{ required: true, message: "Process is required" }]}
-              label={
-                <span className="custom-label" style={{ fontSize: 20 }}>
-                  Process
-                </span>
-              }
+              label={<span className="label_name">Process</span>}
             >
               <Select
                 showSearch
@@ -783,13 +727,13 @@ const App: React.FC = () => {
                 ))}
               </Select>
             </FormItem>
-              
 
+            {/* TODO: check function input monitor ex.monitor_id  */}
             <FormItem
               name="monitor_id"
               label={
                 <div>
-                  <span className="custom-label"> Monitor </span>
+                  <span className="label_name"> Monitor </span>
                   <Popover
                     title="Add Monitor Name"
                     onOpenChange={handleOpenChange}
@@ -800,53 +744,68 @@ const App: React.FC = () => {
                         <Input
                           style={{ width: "300px" }}
                           placeholder="Add Monitor Name"
-                          onChange={(record) => {setInputMonitor(record.target.value);}}
+                          onChange={(record) => {
+                            setInputMonitor(record.target.value);
+                          }}
                         />
-                          <Button 
-                            type="primary" 
-                            style={{margin:"5px"}} 
-                            onClick={() => {
-                              if (InputMonitor !== ""){
-                                handleAddMonitor(InputMonitor)
-                              }
-                            }}>
-                              Add
-                          </Button>
-                          <Button 
-                            type="default" 
-                            style={{margin:"3px"}}
-                            onClick={hide}>
-                              Cancle
-                          </Button> 
+                        <Button
+                          type="primary"
+                          style={{ margin: "5px" }}
+                          onClick={() => {
+                            if (InputMonitor !== "") {
+                              handleAddMonitor(InputMonitor);
+                            } else {
+                              message.error(
+                                "Please Select Process Name and Input Monitor Name"
+                              );
+                            }
+                          }}
+                        >
+                          Add
+                        </Button>
+                        <Button
+                          type="default"
+                          style={{ margin: "3px" }}
+                          onClick={hide}
+                        >
+                          Cancle
+                        </Button>
                       </FormItem>
                     }
-                  >
-                  </Popover>
+                  ></Popover>
                 </div>
               }
             >
-              {/*Dispaly show*/}
-              <div style={{ width: "200px" }}>
-              <>
-                <span
-                  className="monitor_name"
-                  style={{ fontSize: 20, fontWeight: "bold", color: "blue" }}>
-                  {Monitor}
-                </span>
-                <Typography.Link className="button_monitor" disabled={distinct_process < 1} onClick={() => setOpenPopover(true)}>
+              {Monitor === "" ? (
+                <div className="monitor_name">
+                  <span>
+                    <Typography.Link
+                      className="button_edit_monitor"
+                      disabled={distinct_process < 1}
+                      onClick={() => setOpenPopover(true)}
+                    >
                       <PlusCircleOutlined />
-                </Typography.Link>
-              </>
-              </div>
+                    </Typography.Link>
+                    {Monitor}
+                  </span>
+                </div>
+              ) : (
+                <div className="monitor_name">
+                  <span>
+                    <Typography.Link
+                      className="button_edit_monitor"
+                      disabled={distinct_process < 1}
+                      onClick={() => setOpenPopover(true)}
+                    >
+                      <EditOutlined />
+                    </Typography.Link>
+                    {Monitor}
+                  </span>
+                </div>
+              )}
             </FormItem>
 
-            <FormItem
-              style={{
-                display: "flex",
-                alignItems: "right",
-                justifyContent: "right",
-              }}
-            >
+            <FormItem className="form_search">
               <Button
                 type="primary"
                 onClick={showData}
@@ -860,35 +819,20 @@ const App: React.FC = () => {
           </Form>
         </div>
       </div>
+
       <div>
         <Form form={form} component={false}>
-          <div className="search and add" style={{ display: "flex" }}>
-            <FormItem
-              className="search"
-              style={{
-                display: "flex",
-                alignItems: "left",
-                justifyContent: "flex-start",
-                paddingRight: "0.5rem",
-                paddingTop: "1.5rem",
-                flex: 1,
-              }}
-            >
+          <div style={{ display: "flex" }}>
+            <FormItem className="form_search_part_no">
               <Search
+                className="search_part_no"
                 placeholder="Filter a part number"
-                style={{ width: 300, marginRight: "2rem" }}
                 onSearch={(value) => setSearchText(value)}
                 allowClear
               />
             </FormItem>
 
-            <FormItem
-              className="add ws"
-              style={{
-                paddingTop: "1.5rem",
-                flex: 0,
-              }}
-            >
+            <FormItem className="form_add_image">
               <Tooltip title="Add Image">
                 <Button
                   type="primary"
@@ -907,12 +851,7 @@ const App: React.FC = () => {
             </FormItem>
           </div>
 
-          <div
-            style={{
-              borderRadius: "10px",
-              boxShadow: "5px 5px 20px 0px rgba(50, 50, 50, .5)",
-            }}
-          >
+          <div className="table_container">
             <Table
               className="edit_table"
               dataSource={Data}
@@ -929,11 +868,6 @@ const App: React.FC = () => {
                     column.title
                   ),
               }))}
-              onRow={(record) => ({
-                onClick: async () => {
-                  console.log(record);
-                },
-              })}
               rowClassName="editable-row"
               pagination={false}
               scroll={{ y: 590 }}

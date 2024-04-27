@@ -16,6 +16,7 @@ class DataInitalsResponse(BaseModel):
 
 ################################################
 class PostMonitor(BaseModel):
+    # id:int 
     process_id: int
     monitor_name: str
 
