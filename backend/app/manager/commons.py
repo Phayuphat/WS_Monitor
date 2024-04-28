@@ -131,6 +131,7 @@ class CommonsManager:
             return_list.append(
                 display(
                     monitor_name=r[key_index["monitor_name"]],
+                    monitor_id=r[key_index["monitor_id"]]
                 )
             )
         return return_list

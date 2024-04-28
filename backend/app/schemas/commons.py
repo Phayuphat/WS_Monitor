@@ -67,6 +67,7 @@ class part_number_data(BaseModel):
 
 class display(BaseModel):
     monitor_name:str
+    monitor_id:int
 class display_data(BaseModel):
     monitor_name:List[display]
 

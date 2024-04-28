@@ -254,6 +254,7 @@ const App: React.FC = () => {
   //**********************API response (get_monitor_name)**************************
   const DisplayChange = async (value: number) => {
     setDisabled(true);
+
     try {
       const responseDisplay = await axiosInstance.get("/commons/get_display", {
         params: {
@@ -265,7 +266,10 @@ const App: React.FC = () => {
         responseDisplay.status === 200 &&
         responseDisplay.data.monitor_name[0] !== undefined
       ) {
-        setMonitor(responseDisplay.data.monitor_name[0].monitor_name);
+        // setMonitor(responseDisplay.data.monitor_name[0].monitor_name);
+        const monitor_name = responseDisplay.data.monitor_name[0].monitor_name;
+        const monitor_id = responseDisplay.data.monitor_name[0].monitor_id;
+        setMonitor(`${monitor_name} (${monitor_id})`);
       } else {
         setMonitor("");
       }
