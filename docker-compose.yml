@@ -1,0 +1,25 @@
+
+version: "3.3"
+services:
+  ws_fe: 
+    build: ./frontend
+    container_name: ws_fe
+    ports:
+      - 3000:3000
+    volumes:
+      - ./frontend/:/usr/app/
+      - dependencies:/usr/app/node_modules
+    restart: always
+    
+  ws_be:
+    build: ./backend
+    container_name: ws_be
+    ports:
+      - 8000:8000
+    volumes:
+      - ./backend/:/code/
+    env_file:
+      - ./backend/.env
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+volumes:
+  dependencies:

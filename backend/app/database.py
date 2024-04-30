@@ -7,8 +7,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
-
 # API_KEY=YOUR_API_KEY
 # PG_USER_COMMON=postgres
 # PG_PASS_COMMON=postgres

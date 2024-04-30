@@ -53,11 +53,11 @@ const App: React.FC = () => {
     action: `${environment.API_URL}/static/temp`,
     onChange(info) {
       if (info.file.status !== "uploading") {
-        console.log("info file :", info.file, info.fileList);
+        //console.log("info file :", info.file, info.fileList);
       }
       if (info.file.status === "done") {
         message.success(`${info.file.name} file uploaded successfully`);
-        console.log(info.file, info.fileList);
+
         setUploadList(info.fileList);
       } else if (info.file.status === "error") {
         message.error(`${info.file.name} file upload failed.`);
@@ -156,8 +156,7 @@ const App: React.FC = () => {
         const uniqueCheck = newData.every(
           (item) =>
             item.key === key ||
-            (item.part_no !== updatedItem.part_no &&
-              item.plc_data !== updatedItem.plc_data)
+            (item.part_no !== updatedItem.part_no && item.plc_data !== updatedItem.plc_data)
         );
         if (!uniqueCheck) {
           const duplicateItem = newData.find(
@@ -286,11 +285,11 @@ const App: React.FC = () => {
         upsertItem
       );
       if (response.status === 200) {
-        message.success("Post successfully");
+        message.success("Upload successfully");
       } else {
       }
     } catch (error) {
-      console.error("Error post data:", error);
+      console.error("Error Upload data:", error);
     }
   };
 
@@ -337,7 +336,7 @@ const App: React.FC = () => {
 
   //********************** API update (put_edit_wi) ***** condition for post use with edit (true), add row(false) **********
   const update_row = async (upsertItem: UpData) => {
-    console.log("Update Row:", upsertItem);
+    // console.log("Update Row:", upsertItem);
     try {
       const response = await axiosInstance.put(
         "/commons/put_edit_wi",
@@ -385,12 +384,10 @@ const App: React.FC = () => {
           ...item,
         })
       );
-      message.success("Show Data Successfully");
       setData(dataWithKeys);
       setDisabled(false);
     } else {
       setDisabled(true);
-      message.error("Data Not Found ");
     }
 
     if (response_wi.status === 200) {
@@ -548,8 +545,7 @@ const App: React.FC = () => {
       width: 200,
       render: (_: any, record: Item) => {
         const editable = isEditing(record);
-        console.log("test", record);
-
+        // console.log("test", record);
         return (
           <span className="actions-group">
             {editable ? (
@@ -732,7 +728,6 @@ const App: React.FC = () => {
               </Select>
             </FormItem>
 
-            {/* TODO: check function input monitor ex.monitor_id  */}
             <FormItem
               name="monitor_id"
               label={

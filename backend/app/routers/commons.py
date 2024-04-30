@@ -18,20 +18,6 @@ def commons_routers(db: AsyncGenerator) -> APIRouter:
     manager = CommonsManager()
 
     @router.get(
-        "/get_data_initials",
-        response_model=DataInitalsResponse,
-        dependencies=[Depends(api_key_auth)],
-    )
-    async def get_data_initials(db: AsyncSession = Depends(db)):
-        try:
-            data_initials = await manager.get_data_initials(db=db)
-            return DataInitalsResponse(data=data_initials)
-        except Exception as e:
-            raise HTTPException(
-                status_code=400, detail=f"Error during get data : {e}"
-            )
-        
-    @router.get(
         "/get_wi_data",
         response_model=List[DataWi],
         dependencies=[Depends(api_key_auth)],

@@ -1,10 +1,7 @@
-import uvicorn
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
-from typing import List, Dict, Any,Optional,Union
-
 
 # need import models for auto create
 from app.routers import commons_routers,static_routers

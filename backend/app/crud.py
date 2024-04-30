@@ -3,7 +3,6 @@ from sqlalchemy.sql import text
 from typing import List,Optional
 from pydantic import BaseModel
 from fastapi import HTTPException
-import datetime
 
 
 #โครงสร้างภาษา SQL """......"""
