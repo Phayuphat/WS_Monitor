@@ -2,6 +2,36 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any, Union
 import datetime
 
+class LineName(BaseModel):
+    line_id:int
+    line_name:str
+
+class part_no(BaseModel):
+    part_id:int
+    part_no:str
+    part_name:str
+
+class category(BaseModel):
+    category:str
+
+class DataWi(BaseModel):
+    mode_id: int
+    mode:str
+    
+
+class wi_table(BaseModel):
+    mode_id: int
+    mode:str
+    
+
+
+
+
+
+
+
+
+
 
 class DataInitals(BaseModel):
     id: int
@@ -28,50 +58,26 @@ class PostData(BaseModel):
     image_path:Optional[List[Dict[str,Any]]] = None
     update_at:str
 
-class DataWi(BaseModel):
-    id: int
-    part_no:str
-    plc_data:str
-    update_at:str
-    image_path:Optional[List[Dict[str,Any]]] = None
+# class DataWi(BaseModel):
+#     mode_id: int
+#     mode:str
+#     update_at:str
 
-class Display(BaseModel):
-    display_name:str
-class ListDataWi(BaseModel):
-    data:List[DataWi]
+# class Display(BaseModel):
+#     display_name:str
+# class ListDataWi(BaseModel):
+#     data:List[DataWi]
 #################################################
     
-class LineName(BaseModel):
-    line_id:int
-    line_name:str
 
-class LineName_data(BaseModel):
-    value:List[LineName]
 
-############################
-    
-class process_data(BaseModel):
-    process_id:int
-    process_name:str
-    
 
-class process_dataResponse(BaseModel):
-    process_name:List[process_data]
-    
-#############################
-    
-class part_no(BaseModel):
-    part_no:str
-class part_number_data(BaseModel):
-    part_number_name:List[part_no]
 
-class display(BaseModel):
-    monitor_name:str
-    monitor_id:int
-class display_data(BaseModel):
-    monitor_name:List[display]
 
-    
+
+
+
+
 class wi_table(BaseModel):
     id: int
     part_no:str

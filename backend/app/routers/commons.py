@@ -6,7 +6,7 @@ import json
 import string
 import os
 from app.schemas.commons import (
-    DataInitalsResponse,DataInitals,DataWi,LineName,process_dataResponse,part_number_data,wi_table,delete_a_row,PostData,display_data,PostMonitor
+    DataInitals,DataWi,LineName,wi_table,delete_a_row,PostData,PostMonitor, part_no, category
 )
 from app.manager import CommonsManager
 from app.functions import api_key_auth
@@ -17,92 +17,91 @@ def commons_routers(db: AsyncGenerator) -> APIRouter:
     router = APIRouter()
     manager = CommonsManager()
 
-    @router.get(
-        "/get_wi_data",
-        response_model=List[DataWi],
-        dependencies=[Depends(api_key_auth)],
-    )
-    async def get_wi_data(db: AsyncSession = Depends(db)):
-        try:
-            data_wi = await manager.get_wi_data(db=db)
-            return list(data_wi)
-        except Exception as e:
-            raise HTTPException(
-                status_code=400, detail=f"Error during get data : {e}"
-            )
-        
-    @router.get(
-        "/get_linename",
-        response_model=List[LineName],
-        dependencies=[Depends(api_key_auth)],
-    )
-    async def get_linename(db: AsyncSession = Depends(db)):
-        try:
-            line_name = await manager.get_linename(db=db)
-            return list(line_name)
-        except Exception as e:
-            raise HTTPException(
-                status_code=400, detail=f"Error during get data : {e}"
-            )
-        
-    @router.get(
-        "/get_process",
-        response_model=process_dataResponse,
-        dependencies=[Depends(api_key_auth)],
-    )
-    
-    async def get_process(line_id=str, db: AsyncSession = Depends(db)):
-        try:
-            process = await manager.get_process(line_id=line_id,db=db)
-            return process_dataResponse(process_name=process)
-        except Exception as e:
-            raise HTTPException(
-                status_code=400, detail=f"Error during get data : {e}"
-            )
-        
-    @router.get(
-        "/get_part_number",
-        response_model=part_number_data,
-        dependencies=[Depends(api_key_auth)],
-    )
-    async def get_part_number(line_id=int, process_id=int,db: AsyncSession = Depends(db)):
-        try:
-            part_number = await manager.get_part_number(line_id=line_id, process_id=process_id, db=db)
-            return part_number_data(part_number_name=part_number)
-        except Exception as e:
-            raise HTTPException(
-                status_code=400, detail=f"Error during get data : {e}"
-            )
 
     @router.get(
-    "/get_display",
-    response_model=display_data,
-    dependencies=[Depends(api_key_auth)],
-    )
-    async def get_display(process_id: str, db: AsyncSession = Depends(db)):
-        print("Showwwwwwwwww")
-        try:
-            monitor_name = await manager.get_display(process_id=process_id, db=db)
-            return display_data(monitor_name=monitor_name)
-        except Exception as e:
-            raise HTTPException(
-                status_code=400, detail=f"Error during get data : {e}"
-            )
+            "/get_linename",
+            response_model=List[LineName],
+            dependencies=[Depends(api_key_auth)],
+        )
+    async def get_linename(db: AsyncSession = Depends(db)):
+            try:
+                line_name = await manager.get_linename(db=db)
+                return list(line_name)
+            except Exception as error:
+                raise HTTPException(
+                    status_code=400, detail=f"Error during get data : {error}"
+                )
+
+    @router.get(
+            "/get_part_no",
+            response_model=List[part_no],
+            dependencies=[Depends(api_key_auth)],
+        )
         
+    async def get_part_no( db: AsyncSession = Depends(db)):
+            try:
+                part_no = await manager.get_part_no(db=db)
+                return list(part_no)
+            except Exception as e:
+                raise HTTPException(
+                    status_code=400, detail=f"Error during get data : {e}"
+                )
+
+    @router.get(
+                "/get_category",
+                response_model=List[category],
+                dependencies=[Depends(api_key_auth)],
+            )
+            
+    async def get_category( db: AsyncSession = Depends(db)):
+                try:
+                    category = await manager.get_category(db=db)
+                    return list(category)
+                except Exception as e:
+                    raise HTTPException(
+                        status_code=400, detail=f"Error during get data : {e}"
+                    )
+# ! checkkkkkkkkkkkkkkkkkkkkkkkkk
+    @router.get(
+            "/get_wi_data",
+            response_model=List[DataWi],
+            dependencies=[Depends(api_key_auth)],
+        )
+    async def get_wi_data(db: AsyncSession = Depends(db)):
+            try:
+                data_wi = await manager.get_wi_data(db=db)
+                return list(data_wi)
+            except Exception as e:
+                raise HTTPException(
+                    status_code=400, detail=f"Error during get data : {e}"
+                )
         
     @router.get(
         "/get_wi_table",
         response_model=List[wi_table],
         dependencies=[Depends(api_key_auth)],
     )
-    async def get_wi_table(line_id=str, process_id=str, db: AsyncSession = Depends(db)):
+    async def get_wi_table(line_id=int, part_no=str, db: AsyncSession = Depends(db)):
         try:
-            wi_table = await manager.get_wi_table(line_id=line_id, process_id=process_id,db=db)
+            wi_table = await manager.get_wi_table(line_id=line_id, part_no=part_no, db=db)
             return list(wi_table)
         except Exception as e:
             raise HTTPException(
                 status_code=400, detail=f"Error during get data : {e}"
             )
+
+
+
+
+
+
+
+
+
+
+    
+        
+        
 
 
     @router.put(

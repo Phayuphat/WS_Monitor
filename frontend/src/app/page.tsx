@@ -33,37 +33,18 @@ import axiosInstance from "@/app/utils/axios";
 const App: React.FC = () => {
   const { Search } = Input;
   const [form] = Form.useForm();
-  const [InputMonitor, setInputMonitor] = useState<string>("");
   const [LineName, setLineName] = useState<any>([]);
-  const [Process, setProcess] = useState<any>([]);
+  const [PartNo, setPartNo] = useState<any>([]);
+  const [Category, setCategory] = useState<any>([]);
+
   const [MaxId, setMaxId] = useState<number>(0);
   const [Data, setData] = useState<Item[]>([]);
   const [AddRowClick, setAddRowClick] = useState(false);
   const [EditingKey, setEditingKey] = useState("");
   const [UploadList, setUploadList] = useState<antd.UploadFile[]>([]);
   const [DefaultImage, setDefultImage] = useState<any>([]);
-  const [SearchText, setSearchText] = useState("");
-  const [IsDisabled, setDisabled] = useState(true);
-  const [Monitor, setMonitor] = useState<string>("");
-  const [OpenPopover, setOpenPopover] = useState(false);
 
-  //********************** upload imag ***************************
-  const props: antd.UploadProps = {
-    name: "file",
-    action: `${environment.API_URL}/static/temp`,
-    onChange(info) {
-      if (info.file.status !== "uploading") {
-        //console.log("info file :", info.file, info.fileList);
-      }
-      if (info.file.status === "done") {
-        message.success(`${info.file.name} file uploaded successfully`);
 
-        setUploadList(info.fileList);
-      } else if (info.file.status === "error") {
-        message.error(`${info.file.name} file upload failed.`);
-      }
-    },
-  };
 
   //********************** set time thailand ***************************
   const currentDate = new Date();
@@ -88,6 +69,63 @@ const App: React.FC = () => {
   )}: ${String(currentDate.getMinutes()).padStart(2, "0")}: ${String(
     currentDate.getSeconds()
   ).padStart(2, "0")}`;
+
+  //**********************API response (get_linename)**************************
+  const fetch_linename = async () => {
+    
+    try {
+      const response = await axiosInstance.get("/commons/get_linename");
+      if (response.status === 200) {
+        setLineName(response.data);
+        console.log("linename", response.data)
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetch_linename();
+  }, []);
+
+  //**********************API response (get_part_number)**************************
+  const LineNameChange = async (value: number) => {
+    try {
+      const response_part_no = await axiosInstance.get(
+        `/commons/get_part_no?line_id=${value}`
+      );
+      if (response_part_no.status === 200) {
+        setPartNo(response_part_no.data);
+        console.log(response_part_no.data)
+      }
+    } catch (err) {}
+  };
+
+  // useEffect(() => {
+  //   if (form.getFieldValue("LineName") === undefined) {
+  //     form.resetFields(["Part Number"]);
+  //   } else {
+  //     form.resetFields(["Part Number"]);
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [form.getFieldValue("LineName")]);
+
+
+  const PartNoChange = async (value: string) => {
+    try {
+      const response_catrgory = await axiosInstance.get("/commons/get_category");
+
+      if (response_catrgory.status === 200) {
+        setCategory(response_catrgory.data);
+        console.log(response_catrgory.data)
+      }
+    } catch (err) {}
+  };
+
+
+
+
+
 
   //********************** edit func on table ***************************
   const isEditing = (record: Item) => record.key === EditingKey;
@@ -211,71 +249,6 @@ const App: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [DefaultImage]);
 
-  //**********************API response (get_linename)**************************
-  const fetch_linename = async () => {
-    try {
-      const response = await axiosInstance.get("/commons/get_linename");
-      if (response.status === 200) {
-        setLineName(response.data);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  useEffect(() => {
-    fetch_linename();
-  }, []);
-
-  //**********************API response (get_process)**************************
-  const LineNameChange = async (value: string) => {
-    try {
-      const response_process = await axiosInstance.get(
-        `/commons/get_process?line_id=${value}`
-      );
-      if (response_process.status === 200) {
-        setProcess(response_process.data.process_name);
-        setDisabled(true);
-        setMonitor("");
-      }
-    } catch (err) {}
-  };
-
-  useEffect(() => {
-    if (form.getFieldValue("LineName") === undefined) {
-      form.resetFields(["Process"]);
-    } else {
-      form.resetFields(["Process"]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.getFieldValue("LineName")]);
-
-  //**********************API response (get_monitor_name)**************************
-  const DisplayChange = async (value: number) => {
-    setDisabled(true);
-
-    try {
-      const responseDisplay = await axiosInstance.get("/commons/get_display", {
-        params: {
-          process_id: value,
-        },
-      });
-
-      if (
-        responseDisplay.status === 200 &&
-        responseDisplay.data.monitor_name[0] !== undefined
-      ) {
-        // setMonitor(responseDisplay.data.monitor_name[0].monitor_name);
-        const monitor_name = responseDisplay.data.monitor_name[0].monitor_name;
-        const monitor_id = responseDisplay.data.monitor_name[0].monitor_id;
-        setMonitor(`${monitor_name} (${monitor_id})`);
-      } else {
-        setMonitor("");
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   //*************** API post (post_edit_data) ********** condition for post use with add row (true) ***********
   const post_edit_data = async (upsertItem: EditData) => {
@@ -290,35 +263,6 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.error("Error Upload data:", error);
-    }
-  };
-
-  const hide = () => {
-    setOpenPopover(false);
-    form.resetFields(["InputMonitor"]);
-  };
-  const handleOpenChange = (newOpen: boolean) => {
-    setOpenPopover(newOpen);
-  };
-
-  const handleAddMonitor = async (value: string) => {
-    try {
-      const process_id = form.getFieldValue("Process");
-      const responseDisplay = await axiosInstance.post(
-        "/commons/post_monitor",
-        {
-          process_id: process_id,
-          monitor_name: value,
-        }
-      );
-
-      if (responseDisplay.status === 200) {
-        DisplayChange(process_id);
-        setOpenPopover(false);
-        form.resetFields(["InputMonitor"]);
-      }
-    } catch (err) {
-      console.error(err);
     }
   };
 
@@ -357,27 +301,27 @@ const App: React.FC = () => {
     return isUnique;
   });
 
-  const distinct_process = Process.filter((entry: any) => {
-    const isUnique = !unique.has(entry.process_id);
-    unique.add(entry.process_id);
+  const distinct_part_no = PartNo.filter((entry: any) => {
+    const isUnique = !unique.has(entry.part_no);
+    unique.add(entry.part_no);
     return isUnique;
   });
 
   //get data in table ex.image path, plc data, part no., uddate time etc.
   const showData = async () => {
-    setEditingKey("");
+    // setEditingKey("");
 
     const line_id = form.getFieldValue("LineName") || "0";
-    const process_id = form.getFieldValue("Process") || "0";
+    const part_no = form.getFieldValue("Part Number") || "0";
     const response_wi = await axiosInstance.get("/commons/get_wi_data");
     const responsedata = await axiosInstance.get("/commons/get_wi_table", {
       params: {
         line_id: line_id,
-        process_id: process_id,
+        process_id: part_no,
       },
     });
 
-    if (responsedata.status === 200 && line_id != 0 && process_id != 0) {
+    if (responsedata.status === 200 && line_id != 0 && part_no != 0) {
       const dataWithKeys = responsedata.data.map(
         (item: any, index: number) => ({
           key: (index + 1).toString(),
@@ -385,9 +329,9 @@ const App: React.FC = () => {
         })
       );
       setData(dataWithKeys);
-      setDisabled(false);
+      // setDisabled(false);
     } else {
-      setDisabled(true);
+      // setDisabled(true);
     }
 
     if (response_wi.status === 200) {
@@ -406,7 +350,7 @@ const App: React.FC = () => {
   };
 
   const onAddButtonClick = () => {
-    form.resetFields(["plc_data", "part_no"]);
+    // form.resetFields(["plc_data", "part_no"]);
     if (!EditingKey) {
       const newId = MaxId + 1;
       const newData: Item = {
@@ -424,15 +368,15 @@ const App: React.FC = () => {
 
   const columns = [
     {
-      title: "Part Number",
+      title: "Mode",
       dataIndex: "part_no",
       editable: true,
-      onFilter: (value: any, record: Item) =>
-        record.part_no.toLowerCase().includes(value.toLowerCase()),
-      filterIcon: (filtered: any) => (
-        <SearchOutlined style={{ color: filtered ? "#1890ff" : undefined }} />
-      ),
-      filteredValue: SearchText ? [SearchText] : null,
+      // onFilter: (value: any, record: Item) =>
+      //   record.part_no.toLowerCase().includes(value.toLowerCase()),
+      // filterIcon: (filtered: any) => (
+      //   <SearchOutlined style={{ color: filtered ? "#1890ff" : undefined }} />
+      // ),
+      // filteredValue: SearchText ? [SearchText] : null,
       render: (text: string, record: Item) => {
         const editable = isEditing(record);
         if (editable) {
@@ -449,29 +393,29 @@ const App: React.FC = () => {
               <Input />
             </Form.Item>
           );
-        } else if (!SearchText) {
-          return <span> {text} </span>;
-        } else {
-          const searchRegex = new RegExp(`(${SearchText})`, "gi");
-          const parts = text.split(searchRegex);
-          return (
-            <span>
-              {parts.map((part, index) =>
-                searchRegex.test(part) ? (
-                  <span key={index} style={{ backgroundColor: "#ffc069" }}>
-                    {part}
-                  </span>
-                ) : (
-                  part
-                )
-              )}
-            </span>
-          );
+        // } else if (!SearchText) {
+        //   return <span> {text} </span>;
+        // } else {
+        //   const searchRegex = new RegExp(`(${SearchText})`, "gi");
+        //   const parts = text.split(searchRegex);
+        //   return (
+        //     <span>
+        //       {parts.map((part, index) =>
+        //         searchRegex.test(part) ? (
+        //           <span key={index} style={{ backgroundColor: "#ffc069" }}>
+        //             {part}
+        //           </span>
+        //         ) : (
+        //           part
+        //         )
+        //       )}
+        //     </span>
+        //   );
         }
       },
     },
     {
-      title: "PLC Data",
+      title: "Target by Item",
       dataIndex: "plc_data",
       editable: true,
       render: (_: any, record: Item) => {
@@ -493,43 +437,7 @@ const App: React.FC = () => {
         );
       },
     },
-    {
-      title: "Image Preview",
-      dataIndex: "image_path",
-      width: 500,
-      render: (_: any, record: Item) => (
-        <div className="image_show">
-          <Popover title={record.part_no}>
-            {record.image_path.map((image_path: any, index: number) => (
-              <div key={`${record.id}-${index}`}>
-                <Image
-                  src={`${environment.API_URL}${image_path.url}`}
-                  alt={`Image ${index}`}
-                  height={100}
-                  width={200}
-                />
-                <br />
-              </div>
-            ))}
-          </Popover>
-
-          {EditingKey === record.key && (
-            <>
-              <Tooltip title="Upload Image">
-                <Upload {...props} listType="picture">
-                  <Button
-                    className="upload_button"
-                    type="primary"
-                    style={{ boxShadow: "5px 5px 20px 0px", width: "80px" }}
-                    icon={<UploadOutlined />}
-                  ></Button>
-                </Upload>
-              </Tooltip>
-            </>
-          )}
-        </div>
-      ),
-    },
+    
     {
       title: "Update Time",
       dataIndex: "update_at",
@@ -553,10 +461,10 @@ const App: React.FC = () => {
                 <Tooltip title="Save">
                   <Button
                     type="primary"
-                    onClick={() => save(record.key)}
-                    disabled={
-                      UploadList.length < 1 && AddRowClick ? true : false
-                    }
+                    // onClick={() => save(record.key)}
+                    // disabled={
+                    //   UploadList.length < 1 && AddRowClick ? true : false
+                    // }
                     style={{
                       boxShadow: "3px 3px 10px ",
                       width: "50px",
@@ -669,32 +577,35 @@ const App: React.FC = () => {
           <Form
             className="form_selector"
             form={form}
-            onFinish={(x) => console.log(x)}
+            // onFinish={(x) => console.log(x)}
           >
             <FormItem
               name="LineName"
-              rules={[{ required: true, message: "LineName is required" }]}
-              label={<span className="label_name">Line Name</span>}
+              rules={[{ 
+                required: true, 
+                message: "Line Name is required" 
+              }]}
+              label={<span className="label_name"> Line Name </span>}
             >
               <Select
                 showSearch
                 placeholder="Select a LineName"
                 style={{ width: 450 }}
-                onSelect={LineNameChange}
-                onChange={LineNameChange}
+                onSelect={(value) => LineNameChange(value)}
+                onChange={(value) => LineNameChange(value)}
                 allowClear
-                optionFilterProp="children"
-                filterOption={(input, option) =>
-                  ((option?.label as string) ?? "")
-                    .toLowerCase()
-                    .includes(input.toLowerCase())
-                }
+                // optionFilterProp="children"
+                // filterOption={(input, option) =>
+                //   ((option?.label as string) ?? "")
+                //     .toLowerCase()
+                //     .includes(input.toLowerCase())
+                // }
               >
                 {distinct_line_name.map((item: any) => (
                   <Select.Option
                     key={item.line_id}
                     value={item.line_id}
-                    label={item.line_name}
+                    // label={item.line_name}
                   >
                     {item.line_name}
                   </Select.Option>
@@ -703,107 +614,63 @@ const App: React.FC = () => {
             </FormItem>
 
             <FormItem
-              name="Process"
-              rules={[{ required: true, message: "Process is required" }]}
-              label={<span className="label_name">Process</span>}
+              name="Part Number"
+              rules={[{ 
+                required: true, 
+                message: "Part Number is required" 
+              }]}
+              label={<span className="label_name"> Part Number </span>}
             >
               <Select
                 showSearch
                 allowClear
-                placeholder="Select a Process"
+                placeholder="Select a Part Number"
                 style={{ width: 350 }}
-                onSelect={DisplayChange}
-                onChange={DisplayChange}
-                disabled={distinct_process < 1}
+                onSelect={PartNoChange}
+                onChange={PartNoChange}
+                // disabled={distinct_process < 1}
               >
-                {distinct_process.map((item: any) => (
+                {distinct_part_no.map((item: any) => (
                   <Select.Option
-                    key={item.process_id}
-                    value={item.process_id}
-                    label={item.process_name}
+                    key={item.part_id}
+                    value={item.part_no}
+                    // label={item.part_no}
                   >
-                    {item.process_name}
+                    {item.part_no}
                   </Select.Option>
                 ))}
               </Select>
             </FormItem>
 
-            <FormItem
-              name="monitor_id"
-              label={
-                <div>
-                  <span className="label_name"> Monitor </span>
-                  <Popover
-                    title="Add Monitor Name"
-                    onOpenChange={handleOpenChange}
-                    open={OpenPopover}
-                    trigger="click"
-                    content={
-                      <FormItem name={"InputMonitor"}>
-                        <Input
-                          style={{ width: "300px" }}
-                          placeholder="Add Monitor Name"
-                          onChange={(record) => {
-                            setInputMonitor(record.target.value);
-                          }}
-                        />
-                        <Button
-                          type="primary"
-                          style={{ margin: "5px" }}
-                          onClick={() => {
-                            if (InputMonitor !== "") {
-                              handleAddMonitor(InputMonitor);
-                            } else {
-                              message.error(
-                                "Please Select Process Name and Input Monitor Name"
-                              );
-                            }
-                          }}
-                        >
-                          Add
-                        </Button>
-                        <Button
-                          type="default"
-                          style={{ margin: "3px" }}
-                          onClick={hide}
-                        >
-                          Cancle
-                        </Button>
-                      </FormItem>
-                    }
-                  ></Popover>
-                </div>
-              }
+            <FormItem 
+              name="Category"
+              rules={[{ 
+                required: true, 
+                message: "Process is required" 
+              }]}
+              label={<span className="label_name"> Category </span>}
             >
-              {Monitor === "" ? (
-                <div className="monitor_name">
-                  <span>
-                    <Typography.Link
-                      className="button_edit_monitor"
-                      disabled={distinct_process < 1}
-                      onClick={() => setOpenPopover(true)}
-                    >
-                      <PlusCircleOutlined />
-                    </Typography.Link>
-                    {Monitor}
-                  </span>
-                </div>
-              ) : (
-                <div className="monitor_name">
-                  <span>
-                    <Typography.Link
-                      className="button_edit_monitor"
-                      disabled={distinct_process < 1}
-                      onClick={() => setOpenPopover(true)}
-                    >
-                      <EditOutlined />
-                    </Typography.Link>
-                    {Monitor}
-                  </span>
-                </div>
-              )}
+                <Select
+                  showSearch
+                  allowClear
+                  placeholder="Select a Part Number"
+                  style={{ width: 350 }}
+                  // onSelect={DisplayChange}
+                  // onChange={DisplayChange}
+                  // disabled={distinct_process < 1}
+                >
+                  {Category.map((item: any) => (
+                    <Select.Option
+                      key={item.id}
+                      value={item.category}
+                      label={item.category}
+                  >
+                    {item.category}
+                  </Select.Option>
+                  ))}
+                </Select>
             </FormItem>
-
+              
             <FormItem className="form_search">
               <Button
                 type="primary"
@@ -820,17 +687,11 @@ const App: React.FC = () => {
       </div>
 
       <div>
-        <Form form={form} component={false}>
+        <Form 
+          form={form} 
+          // component={false}
+        >
           <div style={{ display: "flex" }}>
-            <FormItem className="form_search_part_no">
-              <Search
-                className="search_part_no"
-                placeholder="Filter a part number"
-                onSearch={(value) => setSearchText(value)}
-                allowClear
-              />
-            </FormItem>
-
             <FormItem className="form_add_image">
               <Tooltip title="Add Image">
                 <Button
@@ -838,11 +699,10 @@ const App: React.FC = () => {
                   onClick={() => {
                     onAddButtonClick();
                     setAddRowClick(true);
-                    setUploadList([]);
                   }}
                   style={{ boxShadow: "3px 3px 10px 0px" }}
                   icon={<PlusOutlined />}
-                  disabled={IsDisabled}
+                  // disabled={IsDisabled}
                 >
                   Add
                 </Button>
@@ -853,20 +713,8 @@ const App: React.FC = () => {
           <div className="table_container">
             <Table
               className="edit_table"
-              dataSource={Data}
-              columns={mergedColumns.map((column) => ({
-                ...column,
-                title:
-                  column.title === "PLC data" ? (
-                    <Tooltip title="ข้อมูลจาก PLC ของกระบวนการผลิตชิ้นงาน">
-                      <span>
-                        PLC data <QuestionCircleOutlined />
-                      </span>
-                    </Tooltip>
-                  ) : (
-                    column.title
-                  ),
-              }))}
+              dataSource={Data}         
+              columns={mergedColumns}
               rowClassName="editable-row"
               pagination={false}
               scroll={{ y: 590 }}

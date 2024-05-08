@@ -1,16 +1,110 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud import CommonsCRUD
 from app.schemas.commons import (
-DataInitals,DataWi,LineName, process_data,part_no,wi_table,delete_a_row,display, PostMonitor
+DataInitals,DataWi,LineName, part_no,delete_a_row, PostMonitor, category
 )
-import json
-from typing import Optional, List, Dict, Any, Union
-import datetime
+# import json
+# from typing import Optional, List, Dict, Any, Union
+# import datetime
 
 
 class CommonsManager:
     def __init__(self) -> None:
         self.crud = CommonsCRUD()
+
+    async def get_linename(
+            self,
+            db: AsyncSession = None,
+        ):
+            res = await self.crud.get_linename(db=db)
+            return_list = []
+            for r in res:
+                key_index = r._key_to_index
+                return_list.append(
+                    LineName(
+                        line_id=r[key_index["line_id"]],
+                        line_name=r[key_index["line_name"]],
+                    )
+                )
+            return return_list
+
+    async def get_part_no(
+            self,
+            
+            db: AsyncSession = None,
+        ):
+            res = await self.crud.get_part_no(db=db)
+            return_list = []
+            for r in res:
+                print(r)
+                key_index = r._key_to_index
+                return_list.append(
+                    part_no(
+                        part_id = r[key_index["part_id"]],
+                        part_no = r[key_index["part_no"]],
+                        part_name = r[key_index["part_name"]],
+                    )
+                )
+            return return_list
+    
+    async def get_category(
+                self,
+                db: AsyncSession = None,
+            ):
+                res = await self.crud.get_category(db=db)
+                return_list = []
+                for r in res:
+                    key_index = r._key_to_index
+                    return_list.append(
+                        category(
+                            category=r[key_index["category"]],
+                        )
+                    )
+                return return_list
+
+    async def get_wi_data(
+            self,
+            db: AsyncSession = None,
+        ):
+            res = await self.crud.get_wi_data(db=db)
+            return_list = []
+            for r in res:
+                key_index = r._key_to_index
+                return_list.append(
+                    DataWi(
+                        mode_id = r[key_index["mode_id"]],
+                        mode = r[key_index["mode"]],
+                        
+                    )
+                )
+            return return_list
+
+    async def get_wi_table(
+        self,
+        line_id=int,
+        part_no=str ,
+        db: AsyncSession = None,
+    ):
+        res = await self.crud.get_wi_table(db=db, line_id=line_id, part_no=part_no)
+        return_list = []
+        for r in res:
+            print(r)
+            key_index = r._key_to_index
+            return_list.append(
+                DataWi(
+                    mode_id = r[key_index["mode_id"]],
+                    mode = r[key_index["mode"]],
+                    
+                )
+            )
+        return return_list
+
+
+
+
+
+
+
 
     async def update_data(
         self,
@@ -20,123 +114,6 @@ class CommonsManager:
         await self.crud.update_data(db=db, item=item)
         return True
 
-
-    async def get_wi_data(
-        self,
-        db: AsyncSession = None,
-    ):
-        res = await self.crud.get_wi_data(db=db)
-        return_list = []
-        for r in res:
-            key_index = r._key_to_index
-            return_list.append(
-                DataWi(
-                    id=r[key_index["id"]],
-                    plc_data=r[key_index["plc_data"]],
-                    part_no=r[key_index["part_no"]],
-                    image_path=r[key_index["image_path"]],
-                    update_at=r[key_index["update_at"]],
-                )
-            )
-        return return_list
-    
-
-    async def get_linename(
-        self,
-        db: AsyncSession = None,
-    ):
-        res = await self.crud.get_linename(db=db)
-        return_list = []
-        for r in res:
-            key_index = r._key_to_index
-            return_list.append(
-                LineName(
-                    line_id=r[key_index["line_id"]],
-                    line_name=r[key_index["line_name"]],
-                )
-            )
-        return return_list
-    
-
-    async def get_process(
-        self,
-        line_id=str,
-        db: AsyncSession = None,
-    ):
-        print("manager",line_id)
-        res = await self.crud.get_process(db=db,line_id=line_id)
-        return_list = []
-        for r in res:
-            print(r)
-            key_index = r._key_to_index
-            return_list.append(
-                process_data(
-                    process_id=r[key_index["process_id"]] ,
-                    process_name=r[key_index["process_name"]],
-                )
-            )
-        return return_list
-    
-
-    async def get_part_number(
-        self,
-        line_id=int,
-        process_id=int,
-        db: AsyncSession = None,
-    ):
-        res = await self.crud.get_part_number(db=db, line_id=line_id, process_id=process_id)
-        return_list = []
-        for r in res:
-            print(r)
-            key_index = r._key_to_index
-            return_list.append(
-                part_no(
-                    part_no=r[key_index["part_no"]],
-                )
-            )
-        return return_list
-
-    async def get_display(
-        self, 
-        process_id: str, 
-        db: AsyncSession = None
-        ):
-        res = await self.crud.get_display(db=db, process_id=process_id)
-        return_list = []
-        for r in res:
-            print(r)
-            key_index = r._key_to_index
-            return_list.append(
-                display(
-                    monitor_name=r[key_index["monitor_name"]],
-                    monitor_id=r[key_index["monitor_id"]]
-                )
-            )
-        return return_list
-
-
-
-    async def get_wi_table(
-        self,
-        line_id=str,
-        process_id=str ,
-        db: AsyncSession = None,
-    ):
-        res = await self.crud.get_wi_table(db=db, line_id=line_id, process_id=process_id)
-        return_list = []
-        for r in res:
-            print(r)
-            key_index = r._key_to_index
-            return_list.append(
-                DataWi(
-                    id=r[key_index["id"]],
-                    part_no=r[key_index["part_no"]],
-                    plc_data=r[key_index["plc_data"]],
-                    image_path=r[key_index["image_path"]],
-                    update_at=r[key_index["update_at"]],
-                )
-            )
-        return return_list
     
 
     async def post_edit_data(

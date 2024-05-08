@@ -8,30 +8,7 @@ class CommonsCRUD:
     def __init__(self):
         pass
 
-    async def update_data(self, item:DataInitals, db: AsyncSession):
-        stmt = f"""
-        UPDATE wi
-        SET part_no=:part_no, plc_data=:plc_data
-        WHERE id = :id;
-        """
-        rs = await db.execute(text(stmt), params={"id": item.id,"plc_data":item.plc_data,"part_no":item.part_no})
-        await db.commit()  # Corrected the missing parentheses
-        return rs
-    
 
-    async def get_wi_data(
-        self,
-        db: AsyncSession,
-    ):
-        try:
-            stmt = f"""
-        SELECT * FROM wi_process
-        """
-            rs = await db.execute(text(stmt))
-            return rs
-        except Exception as e:
-            raise e
-    
     async def get_linename(
         self,db: AsyncSession,
     ):
@@ -43,64 +20,94 @@ class CommonsCRUD:
             rs = await db.execute(text(stmt))
             return rs
         except Exception as e:
-            raise e
+            raise e    
 
-    async def get_process(self,line_id: str, db: AsyncSession):  
-        
-        line_id = int(line_id)
-        print ("line_id", line_id)
-        try:
-            stmt = f"""
-        SELECT process_id, process_name FROM main_process
-        WHERE line_id = :line_id ;
-        """
-            rs = await db.execute(text(stmt),{"line_id": line_id})
-            return rs
-        except Exception as e:
-            raise e
-    
-
-    async def get_part_number(self, line_id:str, process_id:str,
-        db: AsyncSession,
-    ):
-        line_id = int(line_id)
-        process_id = int(process_id)
-        try:
-            stmt = f"""
-        SELECT part_no FROM wi_process
-        WHERE line_id =:line_id AND process_id =:process_id;
-        """
-            rs = await db.execute(text(stmt),{"line_id": line_id, "process_id":process_id})
-            return rs
-        except Exception as e:
-            raise e
-    
-    async def get_display(self, process_id:str, db: AsyncSession):
-        process_id = int(process_id)
-        try:
-            stmt = f"""
-            SELECT monitor_id, monitor_name FROM wi_display 
-            WHERE process_id =:process_id;
-            """
-            rs = await db.execute(text(stmt),{"process_id": process_id})
-            return rs
-        except Exception as e:
-            raise e
-        
-        
-    async def get_wi_table(self,line_id:str, process_id:str,db: AsyncSession,):
-        line_id = int(line_id)
-        process_id = int(process_id)
-        try:
+    async def get_part_no(self, db: AsyncSession):  
             
-            stmt = f"""
-        SELECT id, part_no, plc_data, image_path, update_at FROM wi_process
-        WHERE line_id = :line_id AND process_id = :process_id ;
+            # line_id = int(line_id)
+            # print ("line_id", line_id)
+            try:
+                stmt = f"""
+            SELECT part_id, part_no, part_name FROM main_part
+            """
+                rs = await db.execute(text(stmt))
+                return rs
+            except Exception as e:
+                raise e
+            
+    async def get_category(
+            self,db: AsyncSession,
+        ):
+            
+            try:
+                stmt = f"""
+            SELECT category FROM main_category
+            """
+                rs = await db.execute(text(stmt))
+                return rs
+            except Exception as e:
+                raise e    
+
+
+    async def get_wi_data(
+            self,
+            db: AsyncSession,
+        ):
+            try:
+                stmt = f"""
+            SELECT * FROM pchart_mode
+            """
+                rs = await db.execute(text(stmt))
+                return rs
+            except Exception as e:
+                raise e
+                
+    async def get_wi_table(self, line_id:int, part_no:str, db: AsyncSession,):
+            line_id = int(line_id)
+            # process_id = int(process_id)
+            try:
+                
+                stmt = f"""
+            SELECT mode_id, mode FROM pchart_mode
+            WHERE line_id = :line_id AND part_no = :part_no ;
+            """
+                rs = await db.execute(text(stmt),{"line_id": line_id, "part_no":part_no})
+                return rs
+            except Exception as e:
+                raise e
+
+
+
+
+
+
+    async def update_data(self, item:DataInitals, db: AsyncSession):
+        stmt = f"""
+        UPDATE wi
+        SET part_no=:part_no, plc_data=:plc_data
+        WHERE id = :id;
         """
-            rs = await db.execute(text(stmt),{"line_id": line_id,"process_id":process_id})
-            return rs
-        except Exception as e:
-            raise e
+        rs = await db.execute(text(stmt), params={"id": item.id,"plc_data":item.plc_data,"part_no":item.part_no})
+        await db.commit()  # Corrected the missing parentheses
+        return rs
+
+    
+
+    # async def get_part_number(self, line_id:str, process_id:str,
+    #     db: AsyncSession,
+    # ):
+    #     line_id = int(line_id)
+    #     process_id = int(process_id)
+    #     try:
+    #         stmt = f"""
+    #     SELECT part_no FROM wi_process
+    #     WHERE line_id =:line_id AND process_id =:process_id;
+    #     """
+    #         rs = await db.execute(text(stmt),{"line_id": line_id, "process_id":process_id})
+    #         return rs
+    #     except Exception as e:
+    #         raise e
+    
     
     async def post_edit_data(self,db: AsyncSession,item:DataWi):
         try:
